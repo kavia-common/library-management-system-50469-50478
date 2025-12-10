@@ -1,10 +1,19 @@
 import React from 'react';
 import { useTheme } from '../theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 // PUBLIC_INTERFACE
 export default function NavBar() {
-  /** Top navigation bar with brand and theme toggle. */
+  /** Top navigation bar with brand, language switcher, and theme toggle. */
   const { theme, toggleTheme } = useTheme();
+  const { t, i18n } = useTranslation();
+
+  const nextMode = theme === 'light' ? 'dark' : 'light';
+
+  const changeLang = (e) => {
+    const lng = e.target.value;
+    i18n.changeLanguage(lng);
+  };
 
   return (
     <nav
@@ -35,21 +44,34 @@ export default function NavBar() {
           </div>
           <div>
             <div style={{ fontWeight: 800, letterSpacing: .2, color: 'var(--color-text)' }}>
-              Ocean Library
+              {t('app.name')}
             </div>
             <div style={{ fontSize: 12, color: 'var(--color-muted)' }}>
-              Browse and discover books
+              {t('app.tagline')}
             </div>
           </div>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <label htmlFor="lang" className="sr-only">{t('nav.language')}</label>
+          <select
+            id="lang"
+            aria-label={t('nav.language')}
+            value={i18n.language?.split('-')[0] || 'en'}
+            onChange={changeLang}
+            className="card"
+            style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--color-surface)', border: '1px solid rgba(17,24,39,0.1)' }}
+          >
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+          </select>
+
           <button
             className="btn"
             onClick={toggleTheme}
-            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            title="Toggle theme"
+            aria-label={t('nav.ariaTheme', { mode: nextMode })}
+            title={t('nav.toggleTheme')}
           >
-            {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+            {theme === 'light' ? t('nav.themeDark') : t('nav.themeLight')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // PUBLIC_INTERFACE
 export default function BookDetailModal({ book, onClose }) {
@@ -6,6 +7,9 @@ export default function BookDetailModal({ book, onClose }) {
    * Accessible dialog/modal for book details.
    * Closes on ESC and backdrop click.
    */
+  const { t, i18n } = useTranslation();
+  const lng = i18n.language?.split('-')[0] || 'en';
+
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose?.(); };
     window.addEventListener('keydown', handler);
@@ -14,6 +18,8 @@ export default function BookDetailModal({ book, onClose }) {
 
   if (!book) return null;
 
+  const title = typeof book.titleFor === 'function' ? book.titleFor(lng) : book.title;
+  const description = typeof book.descriptionFor === 'function' ? book.descriptionFor(lng) : (book.description || '');
   const cover = book.coverUrl || `https://picsum.photos/seed/book-${book.id}/300/420`;
 
   return (
@@ -31,30 +37,30 @@ export default function BookDetailModal({ book, onClose }) {
         <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16 }}>
           <img
             src={cover}
-            alt={`Cover of ${book.title}`}
+            alt={t('card.coverAlt', { title })}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
           <div style={{ padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 12 }}>
-              <h2 id="book-modal-title" style={{ margin: '8px 0 4px' }}>{book.title}</h2>
-              <button className="btn" onClick={onClose} aria-label="Close details">Close</button>
+              <h2 id="book-modal-title" style={{ margin: '8px 0 4px' }}>{title}</h2>
+              <button className="btn" onClick={onClose} aria-label={t('modal.close')}>{t('modal.close')}</button>
             </div>
             <div style={{ color: 'var(--color-muted)', marginBottom: 8 }}>
-              {book.author} • {book.year || '—'}
+              {book.author} • {book.year || t('card.unknown')}
             </div>
             <p style={{ marginTop: 8, lineHeight: 1.6 }}>
-              {book.description || 'No description available.'}
+              {description || t('modal.noDescription')}
             </p>
             {book.tags?.length ? (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
-                {book.tags.map((t) => (
-                  <span key={t} style={{
+                {book.tags.map((tTag) => (
+                  <span key={tTag} style={{
                     fontSize: 12,
                     background: 'rgba(37,99,235,0.08)',
                     color: 'var(--color-primary)',
                     padding: '4px 10px',
                     borderRadius: 999
-                  }}>{t}</span>
+                  }}>{tTag}</span>
                 ))}
               </div>
             ) : null}

@@ -1,18 +1,21 @@
 import React, { useId } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // PUBLIC_INTERFACE
-export default function SearchBar({ value, onChange, onSubmit, placeholder = 'Search books by title, author, or ISBN' }) {
+export default function SearchBar({ value, onChange, onSubmit, placeholder }) {
   /** Accessible search bar with submit. */
   const inputId = useId();
+  const { t } = useTranslation();
+  const ph = placeholder || t('search.placeholder');
 
   return (
     <form
       role="search"
-      aria-label="Book search"
+      aria-label={t('search.label')}
       onSubmit={(e) => { e.preventDefault(); onSubmit?.(value); }}
       style={{ margin: '16px 0' }}
     >
-      <label htmlFor={inputId} className="sr-only">Search books</label>
+      <label htmlFor={inputId} className="sr-only">{t('search.label')}</label>
       <div
         className="card"
         style={{
@@ -31,7 +34,7 @@ export default function SearchBar({ value, onChange, onSubmit, placeholder = 'Se
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={ph}
           style={{
             flex: 1,
             border: 'none',
@@ -42,7 +45,7 @@ export default function SearchBar({ value, onChange, onSubmit, placeholder = 'Se
             color: 'var(--color-text)'
           }}
         />
-        <button type="submit" className="btn">Search</button>
+        <button type="submit" className="btn">{t('search.button')}</button>
       </div>
     </form>
   );

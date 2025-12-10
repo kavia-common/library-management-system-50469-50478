@@ -1,0 +1,52 @@
+{
+  "app": {
+    "name": "Ocean Library",
+    "tagline": "Browse and discover books"
+  },
+  "nav": {
+    "toggleTheme": "Toggle theme",
+    "themeLight": "☀️ Light",
+    "themeDark": "🌙 Dark",
+    "ariaTheme": "Switch to {{mode}} mode",
+    "language": "Language"
+  },
+  "home": {
+    "title": "Explore the Library",
+    "subtitle": "Search by title, author, or ISBN.",
+    "loading": "Loading books…",
+    "error": "Something went wrong.",
+    "empty": "No books found."
+  },
+  "search": {
+    "label": "Search books",
+    "placeholder": "Search books by title, author, or ISBN",
+    "button": "Search"
+  },
+  "grid": {
+    "aria": "Book results"
+  },
+  "card": {
+    "quickView": "Quick view",
+    "details": "Details",
+    "ariaQuickView": "Quick view {{title}}",
+    "ariaDetails": "Open details for {{title}}",
+    "coverAlt": "Cover of {{title}}",
+    "unknown": "—"
+  },
+  "modal": {
+    "title": "Book Details",
+    "close": "Close details",
+    "noDescription": "No description available."
+  },
+  "details": {
+    "back": "← Back",
+    "quickView": "Quick view",
+    "notFound": "Book not found.",
+    "loading": "Loading…",
+    "coverAlt": "Cover of {{title}}",
+    "noDescription": "No description available."
+  },
+  "common": {
+    "and": "and"
+  }
+}

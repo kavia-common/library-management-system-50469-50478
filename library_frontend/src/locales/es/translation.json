@@ -1,0 +1,52 @@
+{
+  "app": {
+    "name": "Biblioteca Océano",
+    "tagline": "Explora y descubre libros"
+  },
+  "nav": {
+    "toggleTheme": "Cambiar tema",
+    "themeLight": "☀️ Claro",
+    "themeDark": "🌙 Oscuro",
+    "ariaTheme": "Cambiar a modo {{mode}}",
+    "language": "Idioma"
+  },
+  "home": {
+    "title": "Explora la Biblioteca",
+    "subtitle": "Busca por título, autor o ISBN.",
+    "loading": "Cargando libros…",
+    "error": "Ha ocurrido un error.",
+    "empty": "No se encontraron libros."
+  },
+  "search": {
+    "label": "Buscar libros",
+    "placeholder": "Buscar libros por título, autor o ISBN",
+    "button": "Buscar"
+  },
+  "grid": {
+    "aria": "Resultados de libros"
+  },
+  "card": {
+    "quickView": "Vista rápida",
+    "details": "Detalles",
+    "ariaQuickView": "Vista rápida de {{title}}",
+    "ariaDetails": "Abrir detalles de {{title}}",
+    "coverAlt": "Portada de {{title}}",
+    "unknown": "—"
+  },
+  "modal": {
+    "title": "Detalles del libro",
+    "close": "Cerrar detalles",
+    "noDescription": "No hay descripción disponible."
+  },
+  "details": {
+    "back": "← Volver",
+    "quickView": "Vista rápida",
+    "notFound": "Libro no encontrado.",
+    "loading": "Cargando…",
+    "coverAlt": "Portada de {{title}}",
+    "noDescription": "No hay descripción disponible."
+  },
+  "common": {
+    "and": "y"
+  }
+}

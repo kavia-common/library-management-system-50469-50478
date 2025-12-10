@@ -4,10 +4,13 @@ React frontend for the Library app with a modern, responsive UI.
 
 ## Features
 - Top navigation with theme toggle (light/dark)
+- Language switcher (i18n) with persistence
 - Search bar for books
 - Responsive book grid and details view
 - Accessible details modal (ESC/backdrop close)
 - Environment-driven API base URL with mock fallback
+- Locale-aware book fields (title, description) with graceful fallback
+- RTL direction support for RTL languages
 
 ## Getting Started
 - Install: `npm install`
@@ -32,20 +35,68 @@ Create a `.env` file (do not commit secrets):
 REACT_APP_API_BASE=https://your-backend.example.com
 ```
 
-## Connecting to a Real API
-All API calls are centralized in `src/services/api.js`.
-- Replace or extend `apiFetch` and the endpoints as needed.
-- Current endpoints used:
-  - `GET {API_BASE}/books` -> list of books
-  - `GET {API_BASE}/books/:id` -> details for a book
+## Internationalization (i18n)
+We use `i18next` + `react-i18next` with a default language `en` and `es` as an example.
 
-If requests fail (e.g., no backend running), the UI falls back to mock data so you can continue development.
+- Initialization: `src/i18n/index.js`
+- Translation resources:
+  - `src/locales/en/translation.json`
+  - `src/locales/es/translation.json`
+- Language switching is available in the NavBar via a select input. The choice is persisted to `localStorage` using the `i18nextLng` key.
+- RTL support: for RTL languages (e.g., `ar`, `he`, `fa`, `ur`), the document `dir` attribute is set to `rtl` automatically.
+
+### Adding a New Language
+1. Create a new resource file, e.g. `src/locales/fr/translation.json` with the same keys as existing translations.
+2. Register it in `src/i18n/index.js`:
+   ```
+   import fr from '../locales/fr/translation.json';
+   // ...
+   resources: {
+     en: { translation: en },
+     es: { translation: es },
+     fr: { translation: fr }
+   }
+   ```
+3. Add the language option to the select in `src/components/NavBar.js`.
+4. If the language is RTL, add its code to the `RTL_LANGS` set in `src/i18n/index.js`.
+
+### Adding New Translation Keys
+- Add the new key to all translation files in `src/locales/<lang>/translation.json`.
+- Use it in components via `const { t } = useTranslation();` and `t('your.key')`.
+
+### Localized Book Data from Backend
+Backend responses may include localized fields:
+- `title_translations`: `{ "en": "Title", "es": "Título" }`
+- `description_translations`: `{ "en": "Description", "es": "Descripción" }`
+
+The frontend maps these into locale-aware getters in `src/services/api.js`:
+- `book.titleFor(lang)` -> returns localized title with fallback to default `book.title`
+- `book.descriptionFor(lang)` -> returns localized description with fallback to `book.description`
+
+Your backend can populate these fields for supported languages. If they’re missing, the UI gracefully falls back to the default fields.
+
+#### Example backend book object
+```
+{
+  "id": "1",
+  "title": "The Ocean Between Us",
+  "author": "Sarah Daniels",
+  "year": 2021,
+  "isbn": "9781234567890",
+  "tags": ["Fiction", "Drama"],
+  "description": "A moving tale...",
+  "title_translations": { "es": "El Océano Entre Nosotros" },
+  "description_translations": { "es": "Un relato conmovedor..." }
+}
+```
 
 ## Project Structure
 - `src/components` — NavBar, SearchBar, BookCard, BookGrid, BookDetailModal
 - `src/pages` — Home (search + grid), BookDetails (route)
-- `src/services/api.js` — API base and functions
+- `src/services/api.js` — API base and functions; maps book locale-aware getters
 - `src/theme/ThemeContext.js` — Light/Dark theme toggle
+- `src/i18n/index.js` — i18n initialization (provider is loaded at `src/index.js`)
+- `src/locales/<lang>/translation.json` — Translation resources
 - `src/App.js` — Router and app shell
 
 ## Accessibility
@@ -53,6 +104,8 @@ If requests fail (e.g., no backend running), the UI falls back to mock data so y
 - Proper `role="dialog"` aria markup for modal
 - Live regions are kept minimal to avoid noise
 - Labelled search input
+- Language select with accessible label
+- Document direction updated for RTL languages
 
 ## Styling
 Ocean Professional palette:

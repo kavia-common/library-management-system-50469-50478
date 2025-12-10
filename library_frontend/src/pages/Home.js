@@ -3,6 +3,7 @@ import SearchBar from '../components/SearchBar';
 import BookGrid from '../components/BookGrid';
 import BookDetailModal from '../components/BookDetailModal';
 import { getBooks } from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 // PUBLIC_INTERFACE
 export default function Home() {
@@ -15,6 +16,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
+  const { t, i18n } = useTranslation();
+  const lng = i18n.language?.split('-')[0] || 'en';
 
   useEffect(() => {
     let active = true;
@@ -27,19 +30,20 @@ export default function Home() {
       })
       .catch((e) => {
         if (!active) return;
-        setError(e?.message || 'Failed to load books');
+        setError(e?.message || t('home.error'));
       })
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, []);
+  }, [t]);
 
   const filtered = useMemo(() => {
     if (!query) return books;
     const q = query.toLowerCase();
-    return books.filter((b) =>
-      [b.title, b.author, b.isbn].filter(Boolean).some((v) => String(v).toLowerCase().includes(q))
-    );
-  }, [books, query]);
+    return books.filter((b) => {
+      const title = typeof b.titleFor === 'function' ? b.titleFor(lng) : b.title;
+      return [title, b.author, b.isbn].filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
+    });
+  }, [books, query, lng]);
 
   return (
     <section aria-label="Home">
@@ -52,9 +56,9 @@ export default function Home() {
           marginBottom: 16
         }}
       >
-        <h1 style={{ margin: '4px 0 8px' }}>Explore the Library</h1>
+        <h1 style={{ margin: '4px 0 8px' }}>{t('home.title')}</h1>
         <p style={{ color: 'var(--color-muted)', margin: 0 }}>
-          Search by title, author, or ISBN.
+          {t('home.subtitle')}
         </p>
         <SearchBar
           value={query}
@@ -65,7 +69,7 @@ export default function Home() {
 
       {loading ? (
         <div className="card" style={{ padding: 16 }}>
-          <p style={{ margin: 0 }}>Loading books…</p>
+          <p style={{ margin: 0 }}>{t('home.loading')}</p>
         </div>
       ) : error ? (
         <div className="card" role="alert" style={{ padding: 16, borderColor: 'var(--color-error)' }}>

@@ -1,8 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
+import './i18n';
 
 test('renders navigation title', () => {
   render(<App />);
-  const title = screen.getByText(/Ocean Library/i);
-  expect(title).toBeInTheDocument();
+  const enTitle = screen.queryByText(/Ocean Library/i);
+  const esTitle = screen.queryByText(/Biblioteca Océano/i);
+  expect(enTitle || esTitle).toBeTruthy();
 });
