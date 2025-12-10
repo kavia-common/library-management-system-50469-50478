@@ -5,14 +5,16 @@ import NotificationsBell from './NotificationsBell';
 import { fetchNotifications } from '../services/api';
 import GamificationSummary from './GamificationSummary';
 import { getUserStats, listBadgesCatalog } from '../services/gamification';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 // PUBLIC_INTERFACE
 export default function NavBar() {
-  /** Top navigation bar with brand, language switcher, notifications, preferences, and theme toggle. */
+  /** Top navigation bar with brand, language switcher, notifications, preferences, theme toggle, and staff entry. */
   const { theme, toggleTheme } = useTheme();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { currentUser, loginAsRole, mock } = useAuth();
   const [unread, setUnread] = React.useState(fetchNotifications().filter(n => !n.read).length);
   const [stats, setStats] = React.useState(null);
   const [nextBadge, setNextBadge] = React.useState(null);
@@ -56,6 +58,8 @@ export default function NavBar() {
     const lng = e.target.value;
     i18n.changeLanguage(lng);
   };
+
+  const showStaffLink = !!(currentUser?.roles || []).length;
 
   return (
     <nav
@@ -119,6 +123,19 @@ export default function NavBar() {
           >
             ✨
           </button>
+
+          {showStaffLink ? (
+            <Link to="/staff" className="btn" aria-label={t('staff.nav.title')}>{t('staff.nav.title')}</Link>
+          ) : null}
+
+          {mock && (
+            <div className="card" aria-label={t('staff.roleSwitcher')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px' }}>
+              <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>{t('staff.role')}</span>
+              <button className="btn" onClick={() => loginAsRole('ADMIN')}>ADMIN</button>
+              <button className="btn" onClick={() => loginAsRole('LIBRARIAN')}>LIBRARIAN</button>
+              <button className="btn" onClick={() => loginAsRole('ASSISTANT')}>ASSISTANT</button>
+            </div>
+          )}
 
           <label htmlFor="lang" className="sr-only">{t('nav.language')}</label>
           <select

@@ -113,7 +113,85 @@
     "scrollRight": "Desplazar a la derecha"
   },
   "common": {
-    "and": "y"
+    "and": "y",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "staff": {
+    "nav": {
+      "aria": "Navegación de personal",
+      "title": "Personal",
+      "dashboard": "Panel",
+      "libraries": "Bibliotecas",
+      "users": "Usuarios del personal",
+      "roles": "Roles y Permisos",
+      "activity": "Actividad"
+    },
+    "dashboard": {
+      "title": "Panel del Personal",
+      "overview": "Resumen",
+      "quickLinks": "Accesos directos",
+      "cards": {
+        "libraries": "Bibliotecas totales",
+        "staff": "Miembros del personal",
+        "pending": "Aprobaciones pendientes"
+      }
+    },
+    "libraries": {
+      "title": "Gestionar Bibliotecas",
+      "searchPlaceholder": "Buscar bibliotecas por nombre, dirección u horario…",
+      "add": "Agregar Biblioteca",
+      "addTitle": "Agregar Biblioteca",
+      "editTitle": "Editar Biblioteca",
+      "delete": "Eliminar",
+      "confirmDelete": "¿Eliminar esta biblioteca?",
+      "empty": "No hay bibliotecas.",
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "pageXofY": "Página {{x}} de {{y}}",
+      "actions": "Acciones",
+      "fields": {
+        "name": "Nombre",
+        "address": "Dirección",
+        "hours": "Horario"
+      }
+    },
+    "users": {
+      "title": "Usuarios del Personal",
+      "list": "Usuarios",
+      "invite": "Invitar",
+      "invitePlaceholder": "La invitación no está implementada en el modo simulado.",
+      "name": "Nombre",
+      "email": "Correo",
+      "roles": "Roles",
+      "permissions": "Permisos",
+      "actions": "Acciones",
+      "empty": "No hay usuarios.",
+      "editRoles": "Editar roles",
+      "editRolesFor": "Editar roles de {{name}}"
+    },
+    "roles": {
+      "title": "Roles y Permisos",
+      "role": "Rol",
+      "toggle": "Alternar permiso",
+      "empty": "No hay roles."
+    },
+    "activity": {
+      "title": "Actividad Reciente",
+      "actor": "Actor",
+      "action": "Acción",
+      "when": "Cuándo",
+      "empty": "Sin actividad."
+    },
+    "login": {
+      "title": "Inicio de Sesión del Personal (Simulado)",
+      "subtitle": "Elige un rol para continuar",
+      "note": "En una configuración real, esto redirigiría a tu SSO o flujo de autenticación."
+    },
+    "forbiddenTitle": "Acceso denegado",
+    "forbidden": "No tienes permiso para ver esta página.",
+    "roleSwitcher": "Cambiar rol",
+    "role": "Rol"
   },
   "gam": {
     "pageTitle": "Gamificación",

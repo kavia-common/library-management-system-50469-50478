@@ -4,6 +4,7 @@ React frontend for the Library app with a modern, responsive UI.
 
 ## Features
 - Top navigation with theme toggle (light/dark)
+- Staff management (mock RBAC, localStorage-backed data, ready for backend)
 - Language switcher (i18n) with persistence
 - Search bar for books
 - Responsive book grid and details view
@@ -113,6 +114,47 @@ Mock notifications with Preferences are persisted in localStorage. See `src/comp
 - `src/services` — API services
 - `src/i18n` — i18n initialization
 
-## Where to Extend
-- Replace mock recommendation algorithms with backend endpoints.
-- Integrate real notifications backed by server APIs.
+## Staff Management (RBAC & Mock Backend)
+Routes:
+- /staff — StaffDashboard
+- /staff/libraries — Libraries CRUD (name, address, hours)
+- /staff/users — Staff list, assign roles & permissions
+- /staff/roles — Role definitions and permissions toggles
+- /staff/activity — Recent activity
+- /staff/login — Mock login to choose role when no backend
+
+Auth & RBAC:
+- src/context/AuthContext.js provides currentUser, hasRole(), hasPermission(), loginAsRole() for mock.
+- Default role-permission map:
+  - ADMIN: [manage_libraries, manage_staff, manage_inventory, view_reports]
+  - LIBRARIAN: [manage_inventory, view_reports]
+  - ASSISTANT: [view_reports]
+
+Services:
+- src/services/staff.js exports:
+  - getLibraries({ query, page, pageSize }), createLibrary(data), updateLibrary(id, data), deleteLibrary(id)
+  - getStaffUsers(), updateStaffUserRoles(userId, roles)
+  - getRoles(), updateRolePermissions(role, permissions)
+  - getActivityLog()
+- Mock mode uses localStorage keys: staff:libraries, staff:users, staff:roles, staff:activity. Seeded with sample data.
+- Set REACT_APP_API_BASE to switch to real backend; endpoints expected under /staff/*.
+
+Suggested Backend Contracts:
+- GET /staff/libraries?q=&page=&pageSize=
+  -> { items: [{ id, name, address, hours, createdAt }], total, page, pageSize }
+- POST /staff/libraries { name, address, hours } -> created library
+- PUT /staff/libraries/:id { name?, address?, hours? } -> updated
+- DELETE /staff/libraries/:id -> { success: true }
+- GET /staff/users -> [{ id, name, email, roles:[], permissions:[] }]
+- PUT /staff/users/:id/roles { roles:[] } -> updated user
+- GET /staff/roles -> { ROLE: [permissions...] }
+- PUT /staff/roles/:role { permissions:[] } -> updated roles map
+- GET /staff/activity -> [{ id, actor, action, meta?, timestamp }]
+
+Accessibility & Theme:
+- Ocean Professional styling with keyboard-friendly controls, ARIA labels for tables and dialogs.
+
+Tests:
+- Protected route behavior
+- Libraries CRUD updates in mock store
+- Role change reflects in users table

@@ -113,7 +113,85 @@
     "scrollRight": "Scroll right"
   },
   "common": {
-    "and": "and"
+    "and": "and",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "staff": {
+    "nav": {
+      "aria": "Staff navigation",
+      "title": "Staff",
+      "dashboard": "Dashboard",
+      "libraries": "Libraries",
+      "users": "Staff Users",
+      "roles": "Roles & Permissions",
+      "activity": "Activity"
+    },
+    "dashboard": {
+      "title": "Staff Dashboard",
+      "overview": "Overview",
+      "quickLinks": "Quick links",
+      "cards": {
+        "libraries": "Total libraries",
+        "staff": "Staff members",
+        "pending": "Pending approvals"
+      }
+    },
+    "libraries": {
+      "title": "Manage Libraries",
+      "searchPlaceholder": "Search libraries by name, address, or hours…",
+      "add": "Add Library",
+      "addTitle": "Add Library",
+      "editTitle": "Edit Library",
+      "delete": "Delete",
+      "confirmDelete": "Delete this library?",
+      "empty": "No libraries yet.",
+      "prev": "Previous",
+      "next": "Next",
+      "pageXofY": "Page {{x}} of {{y}}",
+      "actions": "Actions",
+      "fields": {
+        "name": "Name",
+        "address": "Address",
+        "hours": "Hours"
+      }
+    },
+    "users": {
+      "title": "Staff Users",
+      "list": "Users",
+      "invite": "Invite",
+      "invitePlaceholder": "Invite flow is not implemented in mock mode.",
+      "name": "Name",
+      "email": "Email",
+      "roles": "Roles",
+      "permissions": "Permissions",
+      "actions": "Actions",
+      "empty": "No staff users.",
+      "editRoles": "Edit roles",
+      "editRolesFor": "Edit roles for {{name}}"
+    },
+    "roles": {
+      "title": "Roles & Permissions",
+      "role": "Role",
+      "toggle": "Toggle permission",
+      "empty": "No roles found."
+    },
+    "activity": {
+      "title": "Recent Activity",
+      "actor": "Actor",
+      "action": "Action",
+      "when": "When",
+      "empty": "No activity yet."
+    },
+    "login": {
+      "title": "Staff Login (Mock)",
+      "subtitle": "Choose a role to continue",
+      "note": "In a real setup, this would redirect to your SSO or authentication flow."
+    },
+    "forbiddenTitle": "Access denied",
+    "forbidden": "You do not have permission to view this page.",
+    "roleSwitcher": "Switch Role",
+    "role": "Role"
   },
   "gam": {
     "pageTitle": "Gamification",

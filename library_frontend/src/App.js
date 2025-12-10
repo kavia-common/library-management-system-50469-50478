@@ -10,6 +10,15 @@ import NavBar from './components/NavBar';
 import NotificationsCenter from './components/NotificationsCenter';
 import PreferencesModal from './components/PreferencesModal';
 import { ToastProvider } from './components/ToastContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import StaffDashboard from './pages/staff/StaffDashboard';
+import LibrariesManagement from './pages/staff/LibrariesManagement';
+import StaffUsersManagement from './pages/staff/StaffUsersManagement';
+import RolesPermissions from './pages/staff/RolesPermissions';
+import ActivityLog from './pages/staff/ActivityLog';
+import StaffLogin from './pages/staff/StaffLogin';
+import Forbidden from './pages/staff/Forbidden';
+import { AuthProvider } from './context/AuthContext';
 
 // PUBLIC_INTERFACE
 function AppShell() {
@@ -43,6 +52,16 @@ function AppShell() {
           <Route path="/" element={<Home />} />
           <Route path="/books/:id" element={<BookDetails />} />
           <Route path="/gamification" element={<GamificationPage />} />
+
+          <Route path="/staff/login" element={<StaffLogin />} />
+          <Route path="/staff/forbidden" element={<Forbidden />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/staff" element={<StaffDashboard />} />
+            <Route path="/staff/libraries" element={<LibrariesManagement />} />
+            <Route path="/staff/users" element={<StaffUsersManagement />} />
+            <Route path="/staff/roles" element={<RolesPermissions />} />
+            <Route path="/staff/activity" element={<ActivityLog />} />
+          </Route>
         </Routes>
       </main>
 
@@ -64,13 +83,16 @@ function App() {
    * Routes:
    *  - "/" -> Home (search + grid)
    *  - "/books/:id" -> BookDetails
+   *  - "/staff/*" -> Staff area (guarded)
    */
   return (
     <ThemeProvider>
       <ToastProvider>
         <div className="app-root">
           <BrowserRouter>
-            <AppShell />
+            <AuthProvider>
+              <AppShell />
+            </AuthProvider>
           </BrowserRouter>
         </div>
       </ToastProvider>
