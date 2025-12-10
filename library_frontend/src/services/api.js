@@ -108,6 +108,47 @@ const mockBooksRaw = [
 
 const mockBooks = mockBooksRaw.map(mapBook);
 
+// ----------------------- Favorites (local) -----------------------
+const FAV_KEY = 'favorites';
+
+// PUBLIC_INTERFACE
+export function readFavorites() {
+  /** Return an array of favorite book IDs from localStorage. */
+  try {
+    const raw = window.localStorage.getItem(FAV_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.map(String);
+    return [];
+  } catch {
+    return [];
+  }
+}
+function writeFavorites(arr) {
+  try {
+    window.localStorage.setItem(FAV_KEY, JSON.stringify(arr.map(String)));
+  } catch {
+    // ignore
+  }
+}
+
+// PUBLIC_INTERFACE
+export function toggleFavorite(bookId) {
+  /** Toggle a book in favorites and persist to localStorage. Returns updated list. */
+  const id = String(bookId);
+  const current = readFavorites();
+  const exists = current.includes(id);
+  const next = exists ? current.filter((x) => x !== id) : [...current, id];
+  writeFavorites(next);
+  // emit storage event for same-tab listeners
+  try {
+    window.dispatchEvent(new StorageEvent('storage', { key: FAV_KEY, newValue: JSON.stringify(next) }));
+  } catch {
+    // best-effort
+  }
+  return next;
+}
+
 // ----------------------- Notifications Service -----------------------
 const NOTIF_KEY = 'notifications.list';
 const PREF_KEY = 'notifications.preferences';
@@ -315,4 +356,90 @@ export async function getBookById(id) {
   const real = () => apiFetch(`/books/${id}`);
   const mock = mockBooks.find((b) => String(b.id) === String(id));
   return tryRealOrMock(real, mock);
+}
+
+// ----------------------- Recommendation Services -----------------------
+
+// PUBLIC_INTERFACE
+export async function getTrendingBooks() {
+  /**
+   * Return trending books. Backend route (suggested):
+   * GET /recommendations/trending -> [Book]
+   * Mock: computed by synthetic borrow counts + recency.
+   */
+  const real = () => apiFetch('/recommendations/trending');
+  // mock scoring: pretend borrow counts and slight recency boost
+  const borrowCounts = { '1': 18, '2': 28, '3': 14 };
+  const recentBoost = { '1': 3, '2': 6, '3': 1 };
+  const ranked = [...mockBooks].sort((a, b) => {
+    const sa = (borrowCounts[a.id] || 0) + (recentBoost[a.id] || 0);
+    const sb = (borrowCounts[b.id] || 0) + (recentBoost[b.id] || 0);
+    return sb - sa;
+  });
+  return tryRealOrMock(real, ranked);
+}
+
+// PUBLIC_INTERFACE
+export async function getRecommendationsByFavorites(userId = null) {
+  /**
+   * Personalized recommendations using favorites.
+   * Backend route (suggested):
+   * GET /recommendations/by-favorites?userId=XYZ -> [Book]
+   * Mock: content-based similarity by shared tags/authors, excluding favorites.
+   */
+  const real = () => apiFetch(userId ? `/recommendations/by-favorites?userId=${encodeURIComponent(userId)}` : '/recommendations/by-favorites');
+  const favs = readFavorites();
+  if (!favs.length) return [];
+  const favSet = new Set(favs);
+  const favoriteBooks = mockBooks.filter((b) => favSet.has(String(b.id)));
+  const tagFreq = new Map();
+  const authorFreq = new Map();
+  for (const b of favoriteBooks) {
+    (b.tags || []).forEach((t) => tagFreq.set(t, (tagFreq.get(t) || 0) + 1));
+    if (b.author) authorFreq.set(b.author, (authorFreq.get(b.author) || 0) + 2);
+  }
+  const score = (b) => {
+    if (favSet.has(String(b.id))) return -1; // exclude
+    let s = 0;
+    (b.tags || []).forEach((t) => { s += (tagFreq.get(t) || 0); });
+    if (b.author) s += (authorFreq.get(b.author) || 0);
+    return s;
+  };
+  const ranked = [...mockBooks].map((b) => ({ b, s: score(b) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).map(x => x.b);
+  return tryRealOrMock(real, ranked);
+}
+
+// PUBLIC_INTERFACE
+export async function getUsersAlsoBorrowed(bookId) {
+  /**
+   * Users-also-borrowed graph.
+   * Backend route (suggested):
+   * GET /recommendations/also-borrowed/:bookId -> [Book]
+   * Mock: small co-borrow graph seeded here.
+   */
+  const real = () => apiFetch(`/recommendations/also-borrowed/${bookId}`);
+  const graph = {
+    '1': ['3', '2'],
+    '2': ['1', '3'],
+    '3': ['1']
+  };
+  const ids = graph[String(bookId)] || [];
+  const items = ids.map((id) => mockBooks.find((b) => String(b.id) === String(id))).filter(Boolean);
+  return tryRealOrMock(real, items);
+}
+
+// PUBLIC_INTERFACE
+export async function getPersonalizedRecommendations(profile = {}) {
+  /**
+   * Generic personalized recs for a profile.
+   * Backend route (suggested):
+   * POST /recommendations/personalized { profile } -> [Book]
+   * Mock: defer to favorites-based if available else trending.
+   */
+  const real = () => apiFetch('/recommendations/personalized', { method: 'POST', body: JSON.stringify(profile || {}) });
+  const favs = readFavorites();
+  if (favs.length) {
+    return getRecommendationsByFavorites();
+  }
+  return getTrendingBooks();
 }

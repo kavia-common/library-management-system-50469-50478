@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getBookById } from '../services/api';
+import { getBookById, getUsersAlsoBorrowed } from '../services/api';
 import BookDetailModal from '../components/BookDetailModal';
 import { useTranslation } from 'react-i18next';
+import RecommendationRow from '../components/RecommendationRow';
+import { readFavorites, toggleFavorite } from '../services/api';
 
 // PUBLIC_INTERFACE
 export default function BookDetails() {
   /**
    * Book details route page; loads by id and renders in-page details.
    * Also provides a Quick View modal and a back link.
+   * Shows "Users also borrowed" recommendations for this book.
    */
   const { id } = useParams();
   const [book, setBook] = useState(null);
@@ -16,6 +19,9 @@ export default function BookDetails() {
   const [status, setStatus] = useState({ loading: true, error: '' });
   const { t, i18n } = useTranslation();
   const lng = i18n.language?.split('-')[0] || 'en';
+
+  const [also, setAlso] = useState({ loading: true, items: [] });
+  const [favorites, setFavorites] = useState(readFavorites());
 
   useEffect(() => {
     let active = true;
@@ -26,6 +32,23 @@ export default function BookDetails() {
       .finally(() => { if (active) setStatus((s) => ({ ...s, loading: false })); });
     return () => { active = false; };
   }, [id, t]);
+
+  useEffect(() => {
+    let active = true;
+    setAlso((s) => ({ ...s, loading: true }));
+    getUsersAlsoBorrowed(id)
+      .then((items) => { if (active) setAlso({ loading: false, items: items || [] }); })
+      .catch(() => { if (active) setAlso({ loading: false, items: [] }); });
+    return () => { active = false; };
+  }, [id]);
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'favorites') setFavorites(readFavorites());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   if (status.loading) {
     return <div className="card" style={{ padding: 16 }}><p>{t('details.loading')}</p></div>;
@@ -40,6 +63,11 @@ export default function BookDetails() {
   const title = typeof book.titleFor === 'function' ? book.titleFor(lng) : book.title;
   const description = typeof book.descriptionFor === 'function' ? book.descriptionFor(lng) : (book.description || '');
   const cover = book.coverUrl || `https://picsum.photos/seed/book-${book.id}/300/420`;
+
+  const onToggleFavorite = (bookId) => {
+    const next = toggleFavorite(bookId);
+    setFavorites(next);
+  };
 
   return (
     <section aria-label="Book details">
@@ -69,6 +97,18 @@ export default function BookDetails() {
             ) : null}
           </div>
         </div>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <RecommendationRow
+          title={t('recs.alsoBorrowedTitle')}
+          subtitle={t('recs.alsoBorrowedSubtitle')}
+          books={also.items}
+          loading={also.loading}
+          onOpen={() => setOpen(true)}
+          favorites={favorites}
+          onToggleFavorite={onToggleFavorite}
+        />
       </div>
 
       <BookDetailModal book={open ? book : null} onClose={() => setOpen(false)} />

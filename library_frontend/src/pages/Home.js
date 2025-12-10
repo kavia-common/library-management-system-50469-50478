@@ -4,12 +4,14 @@ import BookGrid from '../components/BookGrid';
 import BookDetailModal from '../components/BookDetailModal';
 import { getBooks } from '../services/api';
 import { useTranslation } from 'react-i18next';
+import RecommendationsSection from '../components/RecommendationsSection';
 
 // PUBLIC_INTERFACE
 export default function Home() {
   /**
    * Home page: search input + grid of books with modal quick view.
    * Uses environment-driven API base with mock fallback.
+   * Adds Recommendations below results: Trending (always) + Favorites-based (if any).
    */
   const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
@@ -76,7 +78,12 @@ export default function Home() {
           <p style={{ color: 'var(--color-error)', margin: 0 }}>{error}</p>
         </div>
       ) : (
-        <BookGrid books={filtered} onOpen={setSelected} />
+        <>
+          <BookGrid books={filtered} onOpen={setSelected} />
+          <div style={{ marginTop: 16 }}>
+            <RecommendationsSection onOpen={setSelected} />
+          </div>
+        </>
       )}
 
       <BookDetailModal book={selected} onClose={() => setSelected(null)} />

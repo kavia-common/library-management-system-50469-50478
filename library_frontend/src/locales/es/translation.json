@@ -97,6 +97,21 @@
     },
     "snoozedUntil": "Pospuesto hasta {{time}}"
   },
+  "recs": {
+    "trendingTitle": "Tendencias",
+    "trendingSubtitle": "Popular esta semana",
+    "becauseYouLiked": "Porque te gustaron estos",
+    "fromYourFavorites": "Basado en tus favoritos",
+    "favoritesEmpty": "Agrega libros a favoritos para ver recomendaciones personalizadas.",
+    "alsoBorrowedTitle": "Usuarios también prestaron",
+    "alsoBorrowedSubtitle": "Quienes prestaron este también llevaron",
+    "loading": "Cargando recomendaciones…",
+    "empty": "Aún no hay recomendaciones.",
+    "addFavorite": "Agregar a favoritos",
+    "removeFavorite": "Quitar de favoritos",
+    "scrollLeft": "Desplazar a la izquierda",
+    "scrollRight": "Desplazar a la derecha"
+  },
   "common": {
     "and": "y"
   }

@@ -12,6 +12,7 @@ React frontend for the Library app with a modern, responsive UI.
 - Locale-aware book fields (title, description) with graceful fallback
 - RTL direction support for RTL languages
 - Notifications Center with mock data and preferences (Due Dates, New Arrivals, Personalized)
+- Recommendations: Trending, Favorites-based, and Users-also-borrowed
 
 ## Getting Started
 - Install: `npm install`
@@ -91,6 +92,35 @@ Your backend can populate these fields for supported languages. If they’re mis
 }
 ```
 
+## Recommendations
+
+### Overview
+The app includes a Recommendations system with:
+- Trending: Most popular books this week
+- Favorites-based: Suggestions based on your saved favorites (tags/authors similarity)
+- Users also borrowed: Contextual recommendations on the Book Details page
+
+### UI & Integration
+- Home page: shows "Trending" and "Because you liked these" (when favorites exist)
+- Book Details page: shows a "Users also borrowed" horizontal row
+- Accessible horizontal lists with keyboard left/right navigation, focus-visible styles, and reduced-motion support
+
+### Persistence
+- Favorites stored at `localStorage["favorites"]`
+- Toggle favorite from any card via the heart button
+
+### Backend Contract (suggested)
+Implement these endpoints to replace mock logic and set `REACT_APP_API_BASE`:
+- GET `/recommendations/trending` -> `[Book]`
+- GET `/recommendations/by-favorites?userId=XYZ` -> `[Book]`
+- GET `/recommendations/also-borrowed/:bookId` -> `[Book]`
+- POST `/recommendations/personalized` body: `{ profile: {...} }` -> `[Book]`
+
+Book object shape is consistent with Books APIs and supports optional localized fields (`title_translations`, `description_translations`).
+
+### Swapping to Real Endpoints
+The service functions in `src/services/api.js` will first try the backend via `apiFetch`. On failure, they fall back to mocks. Provide your backend, set `REACT_APP_API_BASE`, and ensure endpoints return arrays of books (or a single book where applicable).
+
 ## Notifications
 
 ### Overview
@@ -125,28 +155,20 @@ Expected API (suggested shapes):
 
 The frontend is ready to switch to real endpoints by replacing the mock storage calls in `src/services/api.js` with `apiFetch` calls.
 
-### Accessibility
+## Accessibility
 - Modal dialogs: `role="dialog"` and Escape to close.
 - Buttons with ARIA labels.
 - Live region for toasts.
 - Keyboard reachable controls.
 
 ## Project Structure
-- `src/components` — NavBar, SearchBar, BookCard, BookGrid, BookDetailModal, NotificationsBell, NotificationsCenter, PreferencesModal, ToastContext
-- `src/pages` — Home (search + grid), BookDetails (route)
-- `src/services/api.js` — API base and functions; books APIs and notifications service
+- `src/components` — NavBar, SearchBar, BookCard, BookGrid, BookDetailModal, NotificationsBell, NotificationsCenter, PreferencesModal, ToastContext, RecommendationCard, RecommendationRow, RecommendationsSection
+- `src/pages` — Home (search + grid + recommendations), BookDetails (route + also-borrowed)
+- `src/services/api.js` — API base and functions; books APIs, notifications, favorites, and recommendation services
 - `src/theme/ThemeContext.js` — Light/Dark theme toggle
 - `src/i18n/index.js` — i18n initialization (provider is loaded at `src/index.js`)
 - `src/locales/<lang>/translation.json` — Translation resources
 - `src/App.js` — Router and app shell
-
-## Accessibility
-- Keyboard-friendly buttons and links
-- Proper `role="dialog"` aria markup for modal
-- Live regions are kept minimal to avoid noise
-- Labelled search input
-- Language select with accessible label
-- Document direction updated for RTL languages
 
 ## Styling
 Ocean Professional palette:
@@ -163,4 +185,4 @@ Utilities live in `src/index.css`. Component-level styles are inline for simplic
 - Add pagination or filters in `Home.js`
 - Add create/edit functionality and forms
 - Replace mock images with real cover URLs from API
-- Replace mock notifications with backend polling, webhooks, or WebSockets
+- Replace mock notifications and recommendations with backend polling, webhooks, or WebSockets

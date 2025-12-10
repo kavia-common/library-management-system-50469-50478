@@ -97,6 +97,21 @@
     },
     "snoozedUntil": "Snoozed until {{time}}"
   },
+  "recs": {
+    "trendingTitle": "Trending",
+    "trendingSubtitle": "Popular this week",
+    "becauseYouLiked": "Because you liked these",
+    "fromYourFavorites": "Based on your favorites",
+    "favoritesEmpty": "Add books to favorites to see tailored recommendations.",
+    "alsoBorrowedTitle": "Users also borrowed",
+    "alsoBorrowedSubtitle": "Readers who borrowed this also took",
+    "loading": "Loading recommendations…",
+    "empty": "No recommendations yet.",
+    "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites",
+    "scrollLeft": "Scroll left",
+    "scrollRight": "Scroll right"
+  },
   "common": {
     "and": "and"
   }
