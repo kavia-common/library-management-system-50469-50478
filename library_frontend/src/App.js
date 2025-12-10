@@ -4,6 +4,7 @@ import './styles.css';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import BookDetailsPage from './pages/BookDetailsPage';
+import ManageBooks from './pages/ManageBooks';
 import { injectCssVariables } from './theme';
 
 // PUBLIC_INTERFACE
@@ -18,6 +19,7 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/manage" element={<ManageBooks />} />
           <Route path="/books/:id" element={<BookDetailsPage />} />
         </Routes>
       </BrowserRouter>
