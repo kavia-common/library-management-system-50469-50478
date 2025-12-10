@@ -8,3 +8,9 @@ test('renders navigation title', () => {
   const esTitle = screen.queryByText(/Biblioteca Océano/i);
   expect(enTitle || esTitle).toBeTruthy();
 });
+
+test('renders notifications bell button', () => {
+  render(<App />);
+  const btn = screen.getByRole('button', { name: /open notifications|abrir notificaciones/i });
+  expect(btn).toBeInTheDocument();
+});

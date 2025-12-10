@@ -1,12 +1,24 @@
 import React from 'react';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import NotificationsBell from './NotificationsBell';
+import { fetchNotifications } from '../services/api';
 
 // PUBLIC_INTERFACE
 export default function NavBar() {
-  /** Top navigation bar with brand, language switcher, and theme toggle. */
+  /** Top navigation bar with brand, language switcher, notifications, preferences, and theme toggle. */
   const { theme, toggleTheme } = useTheme();
   const { t, i18n } = useTranslation();
+  const [openCenter, setOpenCenter] = React.useState(false);
+  const [openPrefs, setOpenPrefs] = React.useState(false);
+  const [unread, setUnread] = React.useState(fetchNotifications().filter(n => !n.read).length);
+
+  React.useEffect(() => {
+    const sync = () => setUnread(fetchNotifications().filter(n => !n.read).length);
+    const id = setInterval(sync, 3000);
+    window.addEventListener('storage', sync);
+    return () => { clearInterval(id); window.removeEventListener('storage', sync); };
+  }, []);
 
   const nextMode = theme === 'light' ? 'dark' : 'light';
 
@@ -52,6 +64,8 @@ export default function NavBar() {
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <NotificationsBell unreadCount={unread} onClick={() => window.dispatchEvent(new Event('openNotifications'))} ariaControls="notifications-center" />
+
           <label htmlFor="lang" className="sr-only">{t('nav.language')}</label>
           <select
             id="lang"
@@ -64,6 +78,15 @@ export default function NavBar() {
             <option value="en">EN</option>
             <option value="es">ES</option>
           </select>
+
+          <button
+            className="btn"
+            onClick={() => window.dispatchEvent(new Event('openPreferences'))}
+            aria-label={t('notifications.openPreferences')}
+            title={t('notifications.openPreferences')}
+          >
+            ⚙️
+          </button>
 
           <button
             className="btn"

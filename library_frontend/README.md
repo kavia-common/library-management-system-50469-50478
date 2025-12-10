@@ -11,6 +11,7 @@ React frontend for the Library app with a modern, responsive UI.
 - Environment-driven API base URL with mock fallback
 - Locale-aware book fields (title, description) with graceful fallback
 - RTL direction support for RTL languages
+- Notifications Center with mock data and preferences (Due Dates, New Arrivals, Personalized)
 
 ## Getting Started
 - Install: `npm install`
@@ -90,10 +91,50 @@ Your backend can populate these fields for supported languages. If they’re mis
 }
 ```
 
+## Notifications
+
+### Overview
+The app includes a Notifications Center with:
+- Types: due_date, new_arrival, personalized
+- Read/unread state and timestamps
+- Actions: View Book, Snooze, Mark as Read, Mark All as Read
+- Preferences: enable/disable categories, frequency (immediate/daily), default snooze duration
+
+A client-side scheduler (every 60s) synthesizes due date reminders from mock loans.
+
+### UI Components
+- `NotificationsBell` (in NavBar): shows unread count badge.
+- `NotificationsCenter` (modal): lists notifications with actions.
+- `PreferencesModal`: manage categories, frequency, snooze.
+- `ToastProvider`: transient feedback (e.g., "Marked as read").
+
+### Persistence
+- Notifications stored at `localStorage["notifications.list"]`
+- Preferences stored at `localStorage["notifications.preferences"]`
+
+### Mock vs Backend
+Currently a mock service is provided in `src/services/api.js`. To integrate a real backend, implement these endpoints on your server and set `REACT_APP_API_BASE`:
+
+Expected API (suggested shapes):
+- GET `/notifications` -> `[ { id, type, timestamp, read, bookId?, bookTitle?, dueAt?, snoozedUntil? } ]`
+- POST `/notifications/:id/read` -> `{ ok: true }`
+- POST `/notifications/read-all` -> `{ ok: true }`
+- POST `/notifications/:id/snooze` body: `{ durationMinutes }` -> `{ ok: true, snoozedUntil }`
+- GET `/notification-preferences` -> `{ enableDueDate, enableNewArrival, enablePersonalized, frequency, defaultSnooze }`
+- PUT `/notification-preferences` body: same shape -> saved preferences
+
+The frontend is ready to switch to real endpoints by replacing the mock storage calls in `src/services/api.js` with `apiFetch` calls.
+
+### Accessibility
+- Modal dialogs: `role="dialog"` and Escape to close.
+- Buttons with ARIA labels.
+- Live region for toasts.
+- Keyboard reachable controls.
+
 ## Project Structure
-- `src/components` — NavBar, SearchBar, BookCard, BookGrid, BookDetailModal
+- `src/components` — NavBar, SearchBar, BookCard, BookGrid, BookDetailModal, NotificationsBell, NotificationsCenter, PreferencesModal, ToastContext
 - `src/pages` — Home (search + grid), BookDetails (route)
-- `src/services/api.js` — API base and functions; maps book locale-aware getters
+- `src/services/api.js` — API base and functions; books APIs and notifications service
 - `src/theme/ThemeContext.js` — Light/Dark theme toggle
 - `src/i18n/index.js` — i18n initialization (provider is loaded at `src/index.js`)
 - `src/locales/<lang>/translation.json` — Translation resources
@@ -122,3 +163,4 @@ Utilities live in `src/index.css`. Component-level styles are inline for simplic
 - Add pagination or filters in `Home.js`
 - Add create/edit functionality and forms
 - Replace mock images with real cover URLs from API
+- Replace mock notifications with backend polling, webhooks, or WebSockets

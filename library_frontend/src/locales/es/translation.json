@@ -46,6 +46,57 @@
     "coverAlt": "Portada de {{title}}",
     "noDescription": "No hay descripción disponible."
   },
+  "notifications": {
+    "title": "Notificaciones",
+    "openCenter": "Abrir notificaciones",
+    "openPreferences": "Abrir preferencias de notificaciones",
+    "none": "¡Estás al día!",
+    "empty": "Aún no hay notificaciones.",
+    "unreadCount": "{{count}} sin leer",
+    "categories": {
+      "due_date": "Recordatorios de vencimiento",
+      "new_arrival": "Nuevas llegadas",
+      "personalized": "Sugerencias personalizadas"
+    },
+    "messages": {
+      "dueSoon": "El libro '{{title}}' vence en {{days}} días",
+      "newArrival": "Nueva llegada: '{{title}}'",
+      "personalized": "Podría gustarte: '{{title}}'"
+    },
+    "actions": {
+      "viewBook": "Ver libro",
+      "snooze": "Posponer",
+      "mark": "Marcar como leído",
+      "markAll": "Marcar todo como leído",
+      "save": "Guardar",
+      "cancel": "Cancelar"
+    },
+    "preferences": {
+      "title": "Preferencias de notificaciones",
+      "categories": "Categorías",
+      "frequency": "Frecuencia",
+      "snooze": "Posponer",
+      "defaultSnooze": "Posponer predeterminado",
+      "link": "Preferencias"
+    },
+    "frequency": {
+      "immediate": "Inmediato",
+      "daily": "Resumen diario"
+    },
+    "snooze": {
+      "15m": "15 minutos",
+      "1h": "1 hora",
+      "3h": "3 horas",
+      "1d": "1 día"
+    },
+    "toasts": {
+      "markedRead": "Marcado como leído",
+      "markedAll": "Todo marcado como leído",
+      "snoozed": "Pospuesto por {{minutes}} minutos",
+      "preferencesSaved": "Preferencias guardadas"
+    },
+    "snoozedUntil": "Pospuesto hasta {{time}}"
+  },
   "common": {
     "and": "y"
   }

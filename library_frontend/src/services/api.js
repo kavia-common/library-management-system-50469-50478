@@ -108,6 +108,186 @@ const mockBooksRaw = [
 
 const mockBooks = mockBooksRaw.map(mapBook);
 
+// ----------------------- Notifications Service -----------------------
+const NOTIF_KEY = 'notifications.list';
+const PREF_KEY = 'notifications.preferences';
+
+// seeded mock notifications and preferences
+const defaultPreferences = {
+  enableDueDate: true,
+  enableNewArrival: true,
+  enablePersonalized: true,
+  frequency: 'immediate', // 'immediate' | 'daily'
+  defaultSnooze: 60 // minutes
+};
+
+// Seed mock notifications with different types
+function seedNotificationsIfEmpty() {
+  const existing = readStorage(NOTIF_KEY, []);
+  if (existing.length > 0) return;
+
+  const now = Date.now();
+  const sample = [
+    {
+      id: `n-${now}-1`,
+      type: 'new_arrival',
+      timestamp: now - 1000 * 60 * 60,
+      read: false,
+      bookId: '2',
+      bookTitle: 'Learning React the Modern Way'
+    },
+    {
+      id: `n-${now}-2`,
+      type: 'personalized',
+      timestamp: now - 1000 * 60 * 30,
+      read: false,
+      bookId: '3',
+      bookTitle: 'Seas and Stories'
+    },
+    {
+      id: `n-${now}-3`,
+      type: 'due_date',
+      timestamp: now - 1000 * 60 * 15,
+      read: false,
+      dueAt: now + 1000 * 60 * 60 * 24 * 2, // 2 days from now
+      bookId: '1',
+      bookTitle: 'The Ocean Between Us'
+    }
+  ];
+  writeStorage(NOTIF_KEY, sample);
+}
+seedNotificationsIfEmpty();
+
+function seedPreferencesIfEmpty() {
+  const prefs = readStorage(PREF_KEY, null);
+  if (!prefs) {
+    writeStorage(PREF_KEY, defaultPreferences);
+  }
+}
+seedPreferencesIfEmpty();
+
+function readStorage(key, fallback) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+function writeStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore
+  }
+}
+
+// PUBLIC_INTERFACE
+export function fetchNotifications() {
+  /** Return notifications from storage (mock), newest first. */
+  const list = readStorage(NOTIF_KEY, []);
+  return list
+    .filter((n) => !n.snoozedUntil || n.snoozedUntil <= Date.now())
+    .sort((a, b) => b.timestamp - a.timestamp);
+}
+
+// PUBLIC_INTERFACE
+export function markAsRead(id) {
+  /** Mark a specific notification as read. */
+  const list = readStorage(NOTIF_KEY, []);
+  const next = list.map((n) => (n.id === id ? { ...n, read: true } : n));
+  writeStorage(NOTIF_KEY, next);
+  return true;
+}
+
+// PUBLIC_INTERFACE
+export function markAllAsRead() {
+  /** Mark all notifications as read. */
+  const list = readStorage(NOTIF_KEY, []);
+  const next = list.map((n) => ({ ...n, read: true }));
+  writeStorage(NOTIF_KEY, next);
+  return true;
+}
+
+// PUBLIC_INTERFACE
+export function snoozeNotification(id, durationMinutes) {
+  /** Snooze a notification for provided minutes. */
+  const until = Date.now() + durationMinutes * 60 * 1000;
+  const list = readStorage(NOTIF_KEY, []);
+  const next = list.map((n) => (n.id === id ? { ...n, snoozedUntil: until } : n));
+  writeStorage(NOTIF_KEY, next);
+  return true;
+}
+
+// PUBLIC_INTERFACE
+export function getNotificationPreferences() {
+  /** Get current notification preferences from storage. */
+  return readStorage(PREF_KEY, defaultPreferences) || defaultPreferences;
+}
+
+// PUBLIC_INTERFACE
+export function setNotificationPreferences(prefs) {
+  /** Persist notification preferences to storage. */
+  const next = { ...defaultPreferences, ...(prefs || {}) };
+  writeStorage(PREF_KEY, next);
+  return next;
+}
+
+// Client-side scheduler to generate due date reminders periodically
+let schedulerStarted = false;
+function startScheduler() {
+  if (schedulerStarted) return;
+  schedulerStarted = true;
+
+  // This ticker checks for due books approaching within 3 days and generates reminders
+  const TICK_MS = 60 * 1000; // 60s
+  const windowMs = 3 * 24 * 60 * 60 * 1000;
+
+  const tick = () => {
+    const prefs = getNotificationPreferences();
+    if (!prefs.enableDueDate) return;
+
+    const now = Date.now();
+    const list = readStorage(NOTIF_KEY, []);
+    const existingDueForBook = new Map();
+    for (const n of list) {
+      if (n.type === 'due_date' && n.bookId) existingDueForBook.set(n.bookId, true);
+    }
+
+    // For mock purposes, create a loan-like list using mock books with synthetic due dates
+    const mockLoans = [
+      { bookId: '1', bookTitle: 'The Ocean Between Us', dueAt: now + 2 * 24 * 60 * 60 * 1000 },
+      { bookId: '3', bookTitle: 'Seas and Stories', dueAt: now + 1 * 24 * 60 * 60 * 1000 + 3600 * 1000 },
+    ];
+
+    const newOnes = [];
+    for (const loan of mockLoans) {
+      if (loan.dueAt - now <= windowMs && !existingDueForBook.get(loan.bookId)) {
+        newOnes.push({
+          id: `n-${now}-${loan.bookId}`,
+          type: 'due_date',
+          timestamp: now,
+          read: false,
+          dueAt: loan.dueAt,
+          bookId: loan.bookId,
+          bookTitle: loan.bookTitle
+        });
+      }
+    }
+
+    if (newOnes.length) {
+      writeStorage(NOTIF_KEY, [...list, ...newOnes]);
+    }
+  };
+
+  tick();
+  setInterval(tick, TICK_MS);
+}
+startScheduler();
+
+// --------------------------------------------------------------------
+// Existing book APIs with mock fallback
 async function tryRealOrMock(realCall, mock) {
   try {
     const data = await realCall();

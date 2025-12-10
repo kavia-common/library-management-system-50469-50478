@@ -46,6 +46,57 @@
     "coverAlt": "Cover of {{title}}",
     "noDescription": "No description available."
   },
+  "notifications": {
+    "title": "Notifications",
+    "openCenter": "Open notifications",
+    "openPreferences": "Open notification preferences",
+    "none": "You're all caught up!",
+    "empty": "No notifications yet.",
+    "unreadCount": "{{count}} unread",
+    "categories": {
+      "due_date": "Due Date Reminders",
+      "new_arrival": "New Book Arrivals",
+      "personalized": "Personalized Suggestions"
+    },
+    "messages": {
+      "dueSoon": "Book '{{title}}' is due in {{days}} days",
+      "newArrival": "New arrival: '{{title}}'",
+      "personalized": "You might like: '{{title}}'"
+    },
+    "actions": {
+      "viewBook": "View Book",
+      "snooze": "Snooze",
+      "mark": "Mark as Read",
+      "markAll": "Mark all as read",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "preferences": {
+      "title": "Notification Preferences",
+      "categories": "Categories",
+      "frequency": "Frequency",
+      "snooze": "Snooze",
+      "defaultSnooze": "Default snooze",
+      "link": "Preferences"
+    },
+    "frequency": {
+      "immediate": "Immediate",
+      "daily": "Daily summary"
+    },
+    "snooze": {
+      "15m": "15 minutes",
+      "1h": "1 hour",
+      "3h": "3 hours",
+      "1d": "1 day"
+    },
+    "toasts": {
+      "markedRead": "Marked as read",
+      "markedAll": "All marked as read",
+      "snoozed": "Snoozed for {{minutes}} minutes",
+      "preferencesSaved": "Preferences saved"
+    },
+    "snoozedUntil": "Snoozed until {{time}}"
+  },
   "common": {
     "and": "and"
   }
