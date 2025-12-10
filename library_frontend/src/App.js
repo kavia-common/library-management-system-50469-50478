@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import BookDetailsPage from './pages/BookDetailsPage';
 import ManageBooks from './pages/ManageBooks';
 import Dashboard from './pages/Dashboard';
+import ProfilePage from './pages/Profile';
 import { injectCssVariables } from './theme';
 
 // PUBLIC_INTERFACE
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/manage" element={<ManageBooks />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/books/:id" element={<BookDetailsPage />} />
         </Routes>
       </BrowserRouter>

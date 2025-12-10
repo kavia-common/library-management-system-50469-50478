@@ -6,6 +6,7 @@ import ReviewForm from './ReviewForm';
 import { getReviews, addReview } from '../services/reviews';
 import { getFavorites, toggleFavorite } from '../services/favorites';
 import { borrowBook, returnBook } from '../services/books';
+import { getReadingLists, addToList, removeFromList } from '../services/user';
 
 // PUBLIC_INTERFACE
 export default function BookDetailsModal({ book, onClose }) {
@@ -21,6 +22,10 @@ export default function BookDetailsModal({ book, onClose }) {
   const [localBook, setLocalBook] = useState(book);
   // Borrow controls (must be declared at top-level, not conditionally)
   const [customDate, setCustomDate] = useState('');
+  // Reading lists
+  const [lists, setLists] = useState([]);
+  const [showListMenu, setShowListMenu] = useState(false);
+  const [workingList, setWorkingList] = useState(false);
 
   useEffect(() => { setLocalBook(book); }, [book]);
 
@@ -85,6 +90,17 @@ export default function BookDetailsModal({ book, onClose }) {
     })();
     return () => { alive = false; };
   }, [localBook?.id]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const data = await getReadingLists();
+        if (alive) setLists(data.lists || []);
+      } catch { /* ignore */ }
+    })();
+    return () => { alive = false; };
+  }, []);
 
   if (!localBook) return null;
 
@@ -154,6 +170,31 @@ export default function BookDetailsModal({ book, onClose }) {
 
   // Borrow controls
   const todayIso = new Date().toISOString().slice(0,10);
+
+  const isInList = (l) => (l.bookIds || []).map(String).includes(String(localBook?.id));
+
+  const toggleList = async (l) => {
+    if (!localBook || workingList) return;
+    setWorkingList(true);
+    const prev = lists.slice();
+    setLists(cur => cur.map(x => x.id === l.id
+      ? { ...x, bookIds: isInList(l) ? x.bookIds.filter(id => String(id) !== String(localBook.id)) : [String(localBook.id), ...x.bookIds] }
+      : x));
+    try {
+      if (isInList(l)) {
+        const data = await removeFromList(l.id, localBook.id);
+        setLists(data.lists || []);
+      } else {
+        const data = await addToList(l.id, localBook.id);
+        setLists(data.lists || []);
+      }
+    } catch (e) {
+      console.warn('List update failed:', e.message);
+      setLists(prev);
+    } finally {
+      setWorkingList(false);
+    }
+  };
   const quickPick = (days) => {
     const d = new Date();
     d.setDate(d.getDate() + days);
@@ -168,7 +209,7 @@ export default function BookDetailsModal({ book, onClose }) {
             <strong id="book-details-title" style={{ fontSize: 18 }}>{localBook.title}</strong>
             <span style={{ color: 'var(--color-text-subtle)' }}>by {localBook.author}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
             <button
               className="btn"
               aria-pressed={isFav}
@@ -179,6 +220,56 @@ export default function BookDetailsModal({ book, onClose }) {
             >
               {isFav ? '★ Favorited' : '☆ Favorite'}
             </button>
+            <button
+              className="btn"
+              onClick={() => setShowListMenu(v => !v)}
+              aria-haspopup="menu"
+              aria-expanded={showListMenu}
+              title="Add/Remove in Reading Lists"
+              style={{ background: 'var(--color-muted)', color: 'var(--color-text)' }}
+            >
+              Lists ▾
+            </button>
+            {showListMenu && (
+              <div
+                role="menu"
+                style={{
+                  position: 'absolute',
+                  right: 44,
+                  top: '110%',
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  boxShadow: 'var(--shadow-md)',
+                  padding: 8,
+                  minWidth: 220,
+                  zIndex: 20,
+                }}
+              >
+                {lists.length === 0 && <div className="empty" style={{ padding: 8 }}>No lists</div>}
+                {lists.map(l => {
+                  const active = (l.bookIds || []).map(String).includes(String(localBook.id));
+                  return (
+                    <button
+                      key={l.id}
+                      className="btn"
+                      role="menuitemcheckbox"
+                      aria-checked={active}
+                      onClick={() => toggleList(l)}
+                      style={{
+                        width: '100%',
+                        marginBottom: 6,
+                        background: active ? 'var(--color-secondary)' : 'var(--color-muted)',
+                        color: active ? 'white' : 'var(--color-text)',
+                      }}
+                      disabled={workingList}
+                    >
+                      {active ? '✓ ' : ''}{l.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <button
               className="modal-close"
               aria-label="Close details"

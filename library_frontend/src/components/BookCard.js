@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import RatingStars from './RatingStars';
 import Tag from './Tag';
 import placeholder from '../assets/placeholder-book.svg';
+import { getReadingLists, addToList, removeFromList } from '../services/user';
 
 /**
  * Props:
@@ -27,6 +28,47 @@ export default function BookCard({ book, onOpen, favoriteIds = [], onToggleFavor
     borderRadius: 999,
     fontSize: 12,
     boxShadow: 'var(--shadow-sm)',
+  };
+
+  const [lists, setLists] = useState([]);
+  const [showMenu, setShowMenu] = useState(false);
+  const [working, setWorking] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const data = await getReadingLists();
+        if (alive) setLists(data.lists || []);
+      } catch { /* ignore */ }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const isInList = (l) => (l.bookIds || []).map(String).includes(String(book.id));
+
+  const toggleList = async (l) => {
+    if (working) return;
+    setWorking(true);
+    const prev = lists.slice();
+    // optimistic
+    setLists(cur => cur.map(x => x.id === l.id
+      ? { ...x, bookIds: isInList(l) ? x.bookIds.filter(id => String(id) !== String(book.id)) : [String(book.id), ...x.bookIds] }
+      : x));
+    try {
+      if (isInList(l)) {
+        const data = await removeFromList(l.id, book.id);
+        setLists(data.lists || []);
+      } else {
+        const data = await addToList(l.id, book.id);
+        setLists(data.lists || []);
+      }
+    } catch (e) {
+      console.warn('List update failed:', e.message);
+      setLists(prev);
+    } finally {
+      setWorking(false);
+    }
   };
 
   return (
@@ -81,13 +123,64 @@ export default function BookCard({ book, onOpen, favoriteIds = [], onToggleFavor
         <span style={{ fontSize: 12, color: 'var(--color-text-subtle)' }}>
           {borrowed ? (dueText ? `Due ${dueText}` : 'Borrowed') : 'Available'}
         </span>
-        <button
-          className="btn"
-          onClick={() => onOpen(book)}
-          aria-label={`View details for ${book.title}`}
-        >
-          View
-        </button>
+        <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+          <button
+            className="btn"
+            onClick={() => setShowMenu(v => !v)}
+            aria-haspopup="menu"
+            aria-expanded={showMenu}
+            title="Add/Remove in Reading Lists"
+          >
+            Lists ▾
+          </button>
+          <button
+            className="btn"
+            onClick={() => onOpen(book)}
+            aria-label={`View details for ${book.title}`}
+          >
+            View
+          </button>
+          {showMenu && (
+            <div
+              role="menu"
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: '110%',
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-md)',
+                padding: 8,
+                minWidth: 220,
+                zIndex: 10,
+              }}
+            >
+              {lists.length === 0 && <div className="empty" style={{ padding: 8 }}>No lists</div>}
+              {lists.map(l => {
+                const active = (l.bookIds || []).map(String).includes(String(book.id));
+                return (
+                  <button
+                    key={l.id}
+                    className="btn"
+                    role="menuitemcheckbox"
+                    aria-checked={active}
+                    onClick={(e) => { e.stopPropagation(); toggleList(l); }}
+                    style={{
+                      width: '100%',
+                      marginBottom: 6,
+                      background: active ? 'var(--color-secondary)' : 'var(--color-muted)',
+                      color: active ? 'white' : 'var(--color-text)',
+                    }}
+                    disabled={working}
+                  >
+                    {active ? '✓ ' : ''}{l.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </article>
   );

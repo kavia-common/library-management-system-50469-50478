@@ -8,6 +8,7 @@ This React app implements a clean, responsive Library Management UI featuring:
 - Dashboard (/dashboard) with summary cards and recent additions
 - Favorites and Reviews with API-first behavior and localStorage fallback
 - Borrow/Return with due dates, reminders on Home and Dashboard
+- User Profiles (/profile): profile customization, personal reading lists, borrowing history
 - Env-aware data service (REACT_APP_API_BASE or REACT_APP_BACKEND_URL), with localStorage-backed mock fallback
 - Accessibility for modals/dialogs (ESC close, focus trap, alt text, labels and aria states)
 
@@ -21,6 +22,62 @@ Scripts:
 - npm run build
 
 Design theme: Ocean Professional
+
+## User Profiles
+
+Navigate to "Profile" from the top navbar or /profile.
+
+Includes:
+- Profile Info
+  - Edit display name
+  - Avatar URL or initials (fallback badge when no avatar URL)
+  - Theme preference: light, dark, or system (stored client-side and via API when available)
+- Reading Lists
+  - Default lists: Want to Read, Currently Reading, Finished
+  - Create/Rename/Delete custom lists
+  - Add/Remove books to/from lists from BookCard and BookDetailsModal via "Lists ▾" menus
+  - API-first persistence with localStorage fallback
+- Borrowing History
+  - Chronological list of borrowed/returned books with dates and dueDate
+  - Filters: all, active (not returned yet), returned, overdue
+  - Uses backend when available; otherwise relies on client-side recorded events
+
+### Expected backend endpoints (API-first)
+
+Base URL controlled by REACT_APP_API_BASE or REACT_APP_BACKEND_URL.
+
+Profile:
+- GET    {BASE}/user/profile
+  - returns { displayName, avatarUrl, initials, theme }
+- PUT    {BASE}/user/profile
+  - body: { displayName?: string, avatarUrl?: string, initials?: string, theme?: "light"|"dark"|"system" }
+  - returns updated profile
+
+Reading Lists:
+- GET    {BASE}/user/reading-lists
+  - returns { lists: [{ id, name, isDefault, bookIds: [string] }, ...] }
+- POST   {BASE}/user/reading-lists
+  - body: { name: string }
+  - returns { lists: [...] }
+- PATCH  {BASE}/user/reading-lists/:listId
+  - body: { name: string }
+  - returns { lists: [...] }
+- DELETE {BASE}/user/reading-lists/:listId
+  - returns { lists: [...] }
+- POST   {BASE}/user/reading-lists/:listId/books
+  - body: { bookId: string }
+  - returns { lists: [...] }
+- DELETE {BASE}/user/reading-lists/:listId/books/:bookId
+  - returns { lists: [...] }
+
+Borrowing History:
+- GET    {BASE}/user/borrow-history?filter=(all|active|returned|overdue)
+  - returns [{ id, bookId, title, borrowedAt, returnedAt|null, dueDate|null }, ...]
+
+Fallback storage keys when no API:
+- ocean-library-user-profile
+- ocean-library-reading-lists
+- ocean-library-borrow-history
 
 ## Borrowing System
 
