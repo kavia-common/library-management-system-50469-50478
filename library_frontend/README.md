@@ -17,6 +17,7 @@ React frontend for the Library app with a modern, responsive UI.
 - Gamification: Achievements, daily streaks, and leaderboard (with mock localStorage fallback)
 - Events & Activities: Calendar/list, event details with RSVP/reminders, and Reading Challenges
 - Tags & Genres taxonomy: manage genres/tags, tag books, and filter grid
+- Data Import/Export for staff (CSV baseline; XLSX if `xlsx` is present)
 
 ## Getting Started
 - Install: `npm install`
@@ -84,6 +85,72 @@ Accessibility & Styling:
 Example payloads:
 - Create Tag: `{ "name": "Bestseller", "description": "Top selling books", "color": "#F59E0B" }`
 - Assign to book: `{ "tags": ["tag_award"], "genres": ["genre_scifi"] }`
+
+## Import/Export (Staff)
+
+A Staff Import/Export page is available at `/staff/import-export` (guarded). It supports CSV import and CSV export; XLSX is auto-enabled if the `xlsx` library is present at runtime.
+
+### Import
+
+Supported formats:
+- CSV (baseline)
+- XLSX (if `xlsx` package is present in runtime; otherwise the UI falls back to CSV)
+
+Schema headers (case-insensitive; spaces allowed):
+- title (required)
+- author (required)
+- isbn
+- description
+- publishedYear
+- genres (comma-separated)
+- tags (comma-separated)
+- coverUrl
+
+Row validation:
+- Required: title, author
+- ISBN: basic pattern
+- publishedYear: numeric up to 4 digits
+- coverUrl: must be a valid URL if present
+- Unknown genres/tags: warnings unless "Auto-create missing tags/genres" is enabled
+
+Import behavior:
+- Upsert by ISBN via backend POST /books/upsert when REACT_APP_API_BASE is set
+- In mock mode (no API), import simulates success
+- Optional auto-create of missing genres/tags (POST /genres, POST /tags) after user confirmation
+
+Error reporting:
+- After validation, you can download a CSV with invalid rows and error messages.
+
+Sample CSV:
+
+```
+title,author,isbn,description,publishedYear,genres,tags,coverUrl
+The Great Gatsby,F. Scott Fitzgerald,9780743273565,Classic novel,1925,Classic,Fiction,https://example.com/gatsby.jpg
+```
+
+### Export
+
+Types:
+- Reading List: Uses user's favorites from localStorage and enriches with catalog when available.
+- Library Catalog: Fetches books via API or mock, allows filtering by genre/tag.
+
+Format:
+- CSV baseline
+- XLSX toggle visible if `xlsx` is present (CSV download still used by default)
+
+Quick Action:
+- From the top NavBar, a button "⬇️ RL" downloads the favorites CSV immediately.
+
+### Backend Contract (if API configured)
+
+- GET /books -> list of books
+- POST /books/upsert -> upsert by ISBN, body: book fields per schema
+- GET /taxonomy/genres -> list (optionally `?q=`)
+- POST /taxonomy/genres -> create { name }
+- GET /taxonomy/tags -> list (optionally `?q=`)
+- POST /taxonomy/tags -> create { name }
+
+Ensure `REACT_APP_API_BASE` is set in `.env` to enable API mode.
 
 ## Recommendations
 Includes Trending, Favorites-based, and Users-also-borrowed flows. See `src/services/api.js`.
@@ -205,6 +272,7 @@ Routes:
 - /staff/activity — Recent activity
 - /staff/login — Mock login to choose role when no backend
 - /staff/taxonomy — Manage Tags & Genres (new)
+- /staff/import-export — Import/Export (new)
 
 Auth & RBAC:
 - src/context/AuthContext.js provides currentUser, hasRole(), hasPermission(), loginAsRole() for mock.
@@ -224,7 +292,8 @@ Suggested Backend Contracts for Taxonomy:
 Styling & Theme:
 - Ocean Professional styling with keyboard-friendly controls, ARIA labels for tables and dialogs.
 
-Tests:
+## Tests
 - Staff protected route behavior and CRUD in mock store
 - Events: calendar render, RSVP updates, reminders, challenges progress, i18n keys resolve
 - Taxonomy: CRUD via mock service, book tagging flows update UI, filters reduce grid results
+- Data I/O: CSV parsing, validation, export reading list CSV format

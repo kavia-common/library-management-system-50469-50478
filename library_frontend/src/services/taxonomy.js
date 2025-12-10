@@ -301,4 +301,28 @@ export function getTaxonomyService() {
   return isMockMode() ? mockTaxonomyService : restTaxonomyService;
 }
 
+// Convenience PUBLIC_INTERFACE for dataIO to obtain simple arrays of names
+// PUBLIC_INTERFACE
+export async function getAllGenres() {
+  const svc = getTaxonomyService();
+  const items = await svc.getGenres();
+  return items;
+}
+// PUBLIC_INTERFACE
+export async function getAllTags() {
+  const svc = getTaxonomyService();
+  const items = await svc.getTags();
+  return items;
+}
+// PUBLIC_INTERFACE
+export async function createGenre(payload) {
+  const svc = getTaxonomyService();
+  return svc.createGenre(payload);
+}
+// PUBLIC_INTERFACE
+export async function createTag(payload) {
+  const svc = getTaxonomyService();
+  return svc.createTag(payload);
+}
+
 export default getTaxonomyService();

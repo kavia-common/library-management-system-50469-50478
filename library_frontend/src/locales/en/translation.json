@@ -327,5 +327,33 @@
   },
   "confirm": {
     "delete": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
-  }
+  },
+
+  "import_export": "Import/Export",
+  "upload_file": "Upload file",
+  "drag_and_drop": "Drag and drop a CSV or XLSX file here, or click to select",
+  "file_type_not_supported": "File type not supported",
+  "validate": "Validate",
+  "import": "Import",
+  "export": "Export",
+  "export_type": "Export type",
+  "format": "Format",
+  "reading_list": "Reading List",
+  "library_catalog": "Library Catalog",
+  "auto_create_missing": "Auto-create missing tags/genres",
+  "rows": "Rows",
+  "valid": "Valid",
+  "invalid": "Invalid",
+  "warnings": "Warnings",
+  "errors": "Errors",
+  "download": "Download",
+  "import_success": "Import completed successfully: {{count}} rows",
+  "import_failure": "Import completed with errors: {{success}} success, {{failed}} failed",
+  "import_n": "Import {{count}} rows",
+  "filter_genre": "Filter by genre",
+  "filter_tag": "Filter by tag",
+  "all": "All",
+  "xlsx_notice": "XLSX export will be available if the xlsx library is present.",
+  "auto_create_missing_confirm": "Create missing tags/genres?",
+  "upsert_by_isbn": "Upsert by ISBN"
 }

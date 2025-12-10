@@ -2,11 +2,12 @@ import React from 'react';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import NotificationsBell from './NotificationsBell';
-import { fetchNotifications } from '../services/api';
+import { fetchNotifications, getBooks } from '../services/api';
 import GamificationSummary from './GamificationSummary';
 import { getUserStats, listBadgesCatalog } from '../services/gamification';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { exportReadingListCSV, downloadBlob } from '../services/dataIO';
 
 // PUBLIC_INTERFACE
 export default function NavBar() {
@@ -61,6 +62,16 @@ export default function NavBar() {
 
   const showStaffLink = !!(currentUser?.roles || []).length;
 
+  const onExportReadingList = async () => {
+    const favoritesRaw = localStorage.getItem('favorites') || '[]';
+    let favorites;
+    try { favorites = JSON.parse(favoritesRaw); } catch { favorites = []; }
+    let books = [];
+    try { books = await getBooks(); } catch { books = []; }
+    const csv = await exportReadingListCSV({ favorites, allBooks: books });
+    downloadBlob('reading_list.csv', csv, 'text/csv;charset=utf-8');
+  };
+
   return (
     <nav
       className="navbar card"
@@ -86,7 +97,8 @@ export default function NavBar() {
               display: 'grid', placeItems: 'center'
             }}
           >
-            <span style={{ color: 'var(--color-primary)' }}>📚</span>
+            <span style={{ color: 'var(--color-primary)' }}>
+📚</span>
           </div>
           <div>
             <div style={{ fontWeight: 800, letterSpacing: .2, color: 'var(--color-text)' }}>
@@ -106,6 +118,8 @@ export default function NavBar() {
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button className="btn" onClick={onExportReadingList} aria-label="Export reading list">⬇️ RL</button>
+
           {stats ? (
             <GamificationSummary
               stats={stats}

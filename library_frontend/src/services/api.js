@@ -46,6 +46,7 @@ export function mapBook(raw) {
     year: raw.year,
     isbn: raw.isbn,
     tags: raw.tags || [],
+    genres: raw.genres || [],
     description: raw.description,
     coverUrl: raw.coverUrl,
     taxonomy: raw.taxonomy || raw.taxonomy || undefined,
@@ -71,6 +72,7 @@ const mockBooksRaw = [
     year: 2021,
     isbn: '9781234567890',
     tags: ['Fiction', 'Drama'],
+    genres: ['Fiction'],
     description: 'A moving tale of distance and connection set across coastal towns.',
     title_translations: {
       es: 'El Océano Entre Nosotros',
@@ -88,6 +90,7 @@ const mockBooksRaw = [
     year: 2023,
     isbn: '9780987654321',
     tags: ['Technology', 'Programming'],
+    genres: ['Non-Fiction'],
     description: 'Hands-on guide to building applications with modern React and hooks.',
     title_translations: {
       es: 'Aprendiendo React de Forma Moderna',
@@ -105,6 +108,7 @@ const mockBooksRaw = [
     year: 2019,
     isbn: '9781111111111',
     tags: ['Adventure'],
+    genres: ['Fiction'],
     description: 'Short stories inspired by vast oceans and coastal cultures.',
     title_translations: {
       es: 'Mares y Historias',
@@ -345,11 +349,11 @@ export async function getBooks(filters = {}) {
       })
     );
     const { tags = [], genres = [] } = filters || {};
-    const tagSet = new Set(tags);
-    const genreSet = new Set(genres);
+    const tagSet = new Set(tags.map((t) => String(t).toLowerCase()));
+    const genreSet = new Set(genres.map((g) => String(g).toLowerCase()));
     return withTax.filter((b) => {
-      const bTags = new Set(b?.taxonomy?.tags || []);
-      const bGenres = new Set(b?.taxonomy?.genres || []);
+      const bTags = new Set((b?.tags || []).map((t) => String(t).toLowerCase()).concat((b?.taxonomy?.tags || []).map((t)=>String(t).toLowerCase())));
+      const bGenres = new Set((b?.genres || []).map((g)=>String(g).toLowerCase()).concat((b?.taxonomy?.genres || []).map((g)=>String(g).toLowerCase())));
       const tagsOk = tagSet.size === 0 || Array.from(tagSet).every((t) => bTags.has(t));
       const genresOk = genreSet.size === 0 || Array.from(genreSet).every((g) => bGenres.has(g));
       return tagsOk && genresOk;
@@ -392,6 +396,22 @@ export async function getBookById(id) {
   } catch {
     return mockBooks.find((b) => String(b.id) === String(id)) || null;
   }
+}
+
+// PUBLIC_INTERFACE
+export async function upsertBookByISBN(book) {
+  /**
+   * Upsert a book using ISBN as key, falling back to mock create/update.
+   * PUBLIC_INTERFACE
+   */
+  if (!process.env.REACT_APP_API_BASE) {
+    // Mock behavior: update in local mockBooksRaw (non-persistent here) or no-op
+    return Promise.resolve({ ok: true, book });
+  }
+  return apiFetch(`/books/upsert`, {
+    method: 'POST',
+    body: JSON.stringify(book),
+  });
 }
 
 // ----------------------- Recommendation Services -----------------------

@@ -321,11 +321,40 @@
   "Loading": "Cargando",
   "Saving": "Guardando",
   "Close": "Cerrar",
+
   "validation": {
     "required": "Este campo es obligatorio.",
     "unique": "Este nombre debe ser único."
   },
   "confirm": {
     "delete": "¿Está seguro que desea eliminar \"{{name}}\"? Esta acción no se puede deshacer."
-  }
+  },
+
+  "import_export": "Importar/Exportar",
+  "upload_file": "Subir archivo",
+  "drag_and_drop": "Arrastre y suelte un archivo CSV o XLSX aquí, o haga clic para seleccionar",
+  "file_type_not_supported": "Tipo de archivo no soportado",
+  "validate": "Validar",
+  "import": "Importar",
+  "export": "Exportar",
+  "export_type": "Tipo de exportación",
+  "format": "Formato",
+  "reading_list": "Lista de lectura",
+  "library_catalog": "Catálogo de la biblioteca",
+  "auto_create_missing": "Crear automáticamente etiquetas/géneros faltantes",
+  "rows": "Filas",
+  "valid": "Válidas",
+  "invalid": "Inválidas",
+  "warnings": "Advertencias",
+  "errors": "Errores",
+  "download": "Descargar",
+  "import_success": "Importación completada con éxito: {{count}} filas",
+  "import_failure": "Importación completada con errores: {{success}} exitosas, {{failed}} fallidas",
+  "import_n": "Importar {{count}} filas",
+  "filter_genre": "Filtrar por género",
+  "filter_tag": "Filtrar por etiqueta",
+  "all": "Todas",
+  "xlsx_notice": "La exportación a XLSX estará disponible si la biblioteca xlsx está presente.",
+  "auto_create_missing_confirm": "¿Crear etiquetas/géneros faltantes?",
+  "upsert_by_isbn": "Actualizar/crear por ISBN"
 }

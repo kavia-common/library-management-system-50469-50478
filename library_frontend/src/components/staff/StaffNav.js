@@ -25,6 +25,7 @@ export default function StaffNav() {
         <NavLink to="/staff/roles" style={linkStyle}>{t('staff.nav.roles')}</NavLink>
         <NavLink to="/staff/activity" style={linkStyle}>{t('staff.nav.activity')}</NavLink>
         <NavLink to="/staff/taxonomy" style={linkStyle}>Taxonomy</NavLink>
+        <NavLink to="/staff/import-export" style={linkStyle}>Import/Export</NavLink>
       </div>
     </nav>
   );
