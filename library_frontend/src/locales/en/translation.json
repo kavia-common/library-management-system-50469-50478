@@ -114,5 +114,83 @@
   },
   "common": {
     "and": "and"
+  },
+  "gam": {
+    "pageTitle": "Gamification",
+    "summary": {
+      "title": "Your progress",
+      "points": "{{n}} pts",
+      "open": "Open gamification",
+      "lastBadge": "Last badge",
+      "nextBadge": "Next badge"
+    },
+    "streak": {
+      "title": "Streak",
+      "current": "Current: {{n}} days",
+      "best": "Best: {{n}} days"
+    },
+    "achievements": {
+      "title": "Achievements",
+      "progress": "Progress"
+    },
+    "leaderboard": {
+      "title": "Leaderboard",
+      "player": "Reader",
+      "points": "Points",
+      "streak": "Streak"
+    },
+    "period": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "all": "All time"
+    },
+    "actions": {
+      "logReading": "Log reading",
+      "saveLog": "Save log",
+      "viewAll": "View all achievements"
+    },
+    "log": {
+      "subtitle": "Track pages and minutes to keep your streak.",
+      "pages": "Pages",
+      "minutes": "Minutes"
+    },
+    "toasts": {
+      "streakContinued": "Streak continued! 🔥",
+      "badgeEarned": "New badge earned: {{name}}",
+      "activityRecorded": "Activity recorded"
+    },
+    "locked": "Locked",
+    "badgeEarnedOn": "Earned on {{date}}",
+    "badges": {
+      "firstRead": {
+        "name": "First Read",
+        "desc": "Log your first reading activity"
+      },
+      "streak7": {
+        "name": "7-day Streak",
+        "desc": "Read 7 days in a row"
+      },
+      "streak30": {
+        "name": "30-day Streak",
+        "desc": "Read 30 days in a row"
+      },
+      "pages100": {
+        "name": "100 Pages",
+        "desc": "Read 100 pages in total"
+      },
+      "earlyBird": {
+        "name": "Early Bird",
+        "desc": "Read in the early morning on 3 days"
+      },
+      "nightOwl": {
+        "name": "Night Owl",
+        "desc": "Read late at night on 3 days"
+      }
+    },
+    "progress": {
+      "pages100": "Pages towards 100",
+      "earlyBird": "Early Bird progress",
+      "nightOwl": "Night Owl progress"
+    }
   }
 }

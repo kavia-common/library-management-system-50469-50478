@@ -3,19 +3,51 @@ import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import NotificationsBell from './NotificationsBell';
 import { fetchNotifications } from '../services/api';
+import GamificationSummary from './GamificationSummary';
+import { getUserStats, listBadgesCatalog } from '../services/gamification';
+import { useNavigate } from 'react-router-dom';
 
 // PUBLIC_INTERFACE
 export default function NavBar() {
   /** Top navigation bar with brand, language switcher, notifications, preferences, and theme toggle. */
   const { theme, toggleTheme } = useTheme();
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [unread, setUnread] = React.useState(fetchNotifications().filter(n => !n.read).length);
+  const [stats, setStats] = React.useState(null);
+  const [nextBadge, setNextBadge] = React.useState(null);
 
   React.useEffect(() => {
     const sync = () => setUnread(fetchNotifications().filter(n => !n.read).length);
     const id = setInterval(sync, 3000);
     window.addEventListener('storage', sync);
     return () => { clearInterval(id); window.removeEventListener('storage', sync); };
+  }, []);
+
+  React.useEffect(() => {
+    let active = true;
+    getUserStats()
+      .then((s) => {
+        if (!active) return;
+        setStats(s);
+        const owned = new Set((s?.badges || []).map((b) => b.id));
+        const catalog = listBadgesCatalog();
+        setNextBadge(catalog.find((b) => !owned.has(b.id)) || null);
+      })
+      .catch(() => {});
+    const onStorage = (e) => {
+      if (e.key === 'gamification:userStats') {
+        try {
+          const s = JSON.parse(e.newValue || '{}');
+          setStats(s);
+          const owned = new Set((s?.badges || []).map((b) => b.id));
+          const catalog = listBadgesCatalog();
+          setNextBadge(catalog.find((b) => !owned.has(b.id)) || null);
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => { active = false; window.removeEventListener('storage', onStorage); };
   }, []);
 
   const nextMode = theme === 'light' ? 'dark' : 'light';
@@ -62,7 +94,31 @@ export default function NavBar() {
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'none' }} aria-hidden="true" />
+          {stats ? (
+            <GamificationSummary
+              stats={stats}
+              nextBadge={nextBadge}
+              onClick={() => navigate('/gamification')}
+            />
+          ) : null}
+          <button
+            className="btn"
+            onClick={() => navigate('/gamification')}
+            aria-label={t('gam.pageTitle')}
+            title={t('gam.pageTitle')}
+          >
+            ✨
+          </button>
           <NotificationsBell unreadCount={unread} onClick={() => window.dispatchEvent(new Event('openNotifications'))} ariaControls="notifications-center" />
+          <button
+            className="btn"
+            onClick={() => navigate('/gamification')}
+            aria-label={t('gam.pageTitle')}
+            title={t('gam.pageTitle')}
+          >
+            ✨
+          </button>
 
           <label htmlFor="lang" className="sr-only">{t('nav.language')}</label>
           <select

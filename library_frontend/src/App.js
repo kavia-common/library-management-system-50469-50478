@@ -5,6 +5,7 @@ import './index.css';
 import { ThemeProvider } from './theme/ThemeContext';
 import Home from './pages/Home';
 import BookDetails from './pages/BookDetails';
+import GamificationPage from './pages/GamificationPage';
 import NavBar from './components/NavBar';
 import NotificationsCenter from './components/NotificationsCenter';
 import PreferencesModal from './components/PreferencesModal';
@@ -41,6 +42,7 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/books/:id" element={<BookDetails />} />
+          <Route path="/gamification" element={<GamificationPage />} />
         </Routes>
       </main>
 

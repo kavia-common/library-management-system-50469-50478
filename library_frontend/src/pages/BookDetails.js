@@ -5,6 +5,8 @@ import BookDetailModal from '../components/BookDetailModal';
 import { useTranslation } from 'react-i18next';
 import RecommendationRow from '../components/RecommendationRow';
 import { readFavorites, toggleFavorite } from '../services/api';
+import { recordReadingActivity } from '../services/gamification';
+import { useToast } from '../components/ToastContext';
 
 // PUBLIC_INTERFACE
 export default function BookDetails() {
@@ -18,6 +20,7 @@ export default function BookDetails() {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState({ loading: true, error: '' });
   const { t, i18n } = useTranslation();
+  const { showToast } = useToast();
   const lng = i18n.language?.split('-')[0] || 'en';
 
   const [also, setAlso] = useState({ loading: true, items: [] });
@@ -71,9 +74,25 @@ export default function BookDetails() {
 
   return (
     <section aria-label="Book details">
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Link to="/" className="btn" aria-label={t('details.back')}>{t('details.back')}</Link>
         <button className="btn" onClick={() => setOpen(true)}>{t('details.quickView')}</button>
+        <button
+          className="btn"
+          onClick={async () => {
+            const res = await recordReadingActivity({ pages: 5, minutes: 10 });
+            if (res?._newBadges?.length) {
+              showToast(t('gam.toasts.badgeEarned', { name: t(res._newBadges[0].nameKey) }));
+            } else {
+              showToast(t('gam.toasts.activityRecorded'));
+            }
+          }}
+          aria-label={t('gam.actions.logReading')}
+          title={t('gam.actions.logReading')}
+          style={{ background: 'var(--color-secondary)', color: '#111827' }}
+        >
+          {t('gam.actions.logReading')}
+        </button>
       </div>
 
       <div className="card" style={{ overflow: 'hidden' }}>

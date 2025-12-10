@@ -5,6 +5,9 @@ import BookDetailModal from '../components/BookDetailModal';
 import { getBooks } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import RecommendationsSection from '../components/RecommendationsSection';
+import GamificationSummary from '../components/GamificationSummary';
+import { getUserStats, listBadgesCatalog } from '../services/gamification';
+import { useNavigate } from 'react-router-dom';
 
 // PUBLIC_INTERFACE
 export default function Home() {
@@ -19,6 +22,9 @@ export default function Home() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const [gamStats, setGamStats] = useState(null);
+  const [nextBadge, setNextBadge] = useState(null);
   const lng = i18n.language?.split('-')[0] || 'en';
 
   useEffect(() => {
@@ -37,6 +43,32 @@ export default function Home() {
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [t]);
+
+  useEffect(() => {
+    let active = true;
+    getUserStats()
+      .then((s) => {
+        if (!active) return;
+        setGamStats(s);
+        const owned = new Set((s?.badges || []).map((b) => b.id));
+        const catalog = listBadgesCatalog();
+        setNextBadge(catalog.find((b) => !owned.has(b.id)) || null);
+      })
+      .catch(() => {});
+    const onStorage = (e) => {
+      if (e.key === 'gamification:userStats') {
+        try {
+          const s = JSON.parse(e.newValue || '{}');
+          setGamStats(s);
+          const owned = new Set((s?.badges || []).map((b) => b.id));
+          const catalog = listBadgesCatalog();
+          setNextBadge(catalog.find((b) => !owned.has(b.id)) || null);
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => { active = false; window.removeEventListener('storage', onStorage); };
+  }, []);
 
   const filtered = useMemo(() => {
     if (!query) return books;
@@ -67,6 +99,11 @@ export default function Home() {
           onChange={setQuery}
           onSubmit={() => {}}
         />
+        {gamStats ? (
+          <div style={{ marginTop: 8, maxWidth: 420 }}>
+            <GamificationSummary stats={gamStats} nextBadge={nextBadge} onClick={() => navigate('/gamification')} />
+          </div>
+        ) : null}
       </div>
 
       {loading ? (

@@ -13,6 +13,7 @@ React frontend for the Library app with a modern, responsive UI.
 - RTL direction support for RTL languages
 - Notifications Center with mock data and preferences (Due Dates, New Arrivals, Personalized)
 - Recommendations: Trending, Favorites-based, and Users-also-borrowed
+- Gamification: Achievements, daily streaks, and leaderboard (with mock localStorage fallback)
 
 ## Getting Started
 - Install: `npm install`
@@ -42,6 +43,61 @@ We use `i18next` + `react-i18next` with a default language `en` and `es` as an e
 
 ## Recommendations
 Includes Trending, Favorites-based, and Users-also-borrowed flows. See `src/services/api.js`.
+
+## Gamification
+UI components:
+- BadgeIcon: accessible badge visuals with tooltips and labels.
+- AchievementsPanel: lists earned/locked badges + progress (pages towards 100, early bird/night owl).
+- StreakCounter: current and best daily streak with a “Log reading” CTA.
+- Leaderboard: weekly/monthly/all-time tabs with keyboard navigation.
+- GamificationSummary: compact header widget showing points, streak, and next badge.
+
+Page/Route:
+- /gamification shows streak, log form, achievements, and leaderboard.
+- Home and NavBar show a compact summary.
+
+State & Services:
+- `src/services/gamification.js` exports:
+  - getUserStats() -> { points, currentStreak, bestStreak, lastReadDate, badges: [...], progress: {...}, pagesRead, minutesRead }
+  - recordReadingActivity({ pages, minutes }) -> updates streak, badges, points; returns updated stats and `_newBadges` (mock)
+  - getLeaderboard({ period }) -> array of { rank, userId, displayName, points, currentStreak, pagesRead }
+  - listBadgesCatalog() -> badge catalog
+  - getOrCreateUserId() -> persisted local user id
+- If REACT_APP_API_BASE is unset or backend endpoints are unavailable, a mock service persists to localStorage:
+  - streak increments for consecutive days; resets otherwise
+  - badges: First Read, 7-day Streak, 30-day Streak, 100 Pages, Early Bird (3 mornings), Night Owl (3 nights)
+  - leaderboard merges your local stats into seeded sample data
+
+Backend Contract (switch-ready):
+- GET /gamification/stats -> returns current user stats
+- POST /gamification/activity { pages, minutes, timestamp? } -> returns updated stats
+- GET /gamification/leaderboard?period=weekly|monthly|all -> returns leaderboard rows
+Stats example:
+{
+  "userId": "u_xxx",
+  "displayName": "You",
+  "points": 120,
+  "pagesRead": 80,
+  "minutesRead": 60,
+  "currentStreak": 3,
+  "bestStreak": 5,
+  "lastReadDate": "2025-01-12",
+  "badges": [{ "id": "first_read", "nameKey": "gam.badges.firstRead.name", "descKey": "gam.badges.firstRead.desc", "emoji":"📖", "earnedAt":"2025-01-10T10:00:00Z" }],
+  "progress": { "pages100": 80, "earlyBirdDays": 2, "nightOwlDays": 1 }
+}
+
+Integration:
+- BookDetails has a “Log reading” button (5 pages / 10 minutes quick log).
+- Home/NavBar display the GamificationSummary linking to the /gamification page.
+- Toasts notify about recorded activity, continued streaks, or newly earned badges.
+
+Styling & Accessibility:
+- Ocean Professional theme, focus-visible outlines, ARIA roles for progress and table, keyboard navigation in leaderboard.
+- Reduced-motion friendly: no heavy animations when prefers-reduced-motion is set.
+
+Switching to a real backend:
+- Set REACT_APP_API_BASE to your backend; the app will call the endpoints above.
+- Ensure authentication and user identity handling is implemented server-side; on the frontend we keep a simple local userId only for mock mode.
 
 ## Notifications
 Mock notifications with Preferences are persisted in localStorage. See `src/components/NotificationsCenter.js`.

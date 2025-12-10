@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { readFavorites, toggleFavorite } from '../services/api';
+import { recordReadingActivity } from '../services/gamification';
+import { useToast } from './ToastContext';
 
 // PUBLIC_INTERFACE
 export default function BookCard({ book, onOpen }) {
@@ -14,6 +16,7 @@ export default function BookCard({ book, onOpen }) {
   const { t, i18n } = useTranslation();
   const lng = i18n.language?.split('-')[0] || 'en';
   const [favorites, setFavorites] = React.useState(readFavorites());
+  const { showToast } = useToast();
 
   const { id, author, coverUrl, year, tags = [] } = book;
   const title = typeof book.titleFor === 'function' ? book.titleFor(lng) : book.title;
@@ -88,13 +91,28 @@ export default function BookCard({ book, onOpen }) {
             }}>{tTag}</span>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
           <button className="btn" onClick={() => onOpen?.(book)} aria-label={t('card.ariaQuickView', { title })}>
             {t('card.quickView')}
           </button>
           <Link to={`/books/${id}`} className="btn" aria-label={t('card.ariaDetails', { title })} style={{ background: 'var(--color-secondary)', color: '#111827' }}>
             {t('card.details')}
           </Link>
+          <button
+            className="btn"
+            onClick={async () => {
+              const res = await recordReadingActivity({ pages: 3, minutes: 5 });
+              if (res?._newBadges?.length) {
+                showToast(t('gam.toasts.badgeEarned', { name: t(res._newBadges[0].nameKey) }));
+              } else {
+                showToast(t('gam.toasts.activityRecorded'));
+              }
+            }}
+            title={t('gam.actions.logReading')}
+            aria-label={t('gam.actions.logReading')}
+          >
+            {t('gam.actions.logReading')}
+          </button>
         </div>
       </div>
     </article>

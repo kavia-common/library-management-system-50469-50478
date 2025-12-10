@@ -114,5 +114,83 @@
   },
   "common": {
     "and": "y"
+  },
+  "gam": {
+    "pageTitle": "Gamificación",
+    "summary": {
+      "title": "Tu progreso",
+      "points": "{{n}} pts",
+      "open": "Abrir gamificación",
+      "lastBadge": "Última insignia",
+      "nextBadge": "Siguiente insignia"
+    },
+    "streak": {
+      "title": "Racha",
+      "current": "Actual: {{n}} días",
+      "best": "Mejor: {{n}} días"
+    },
+    "achievements": {
+      "title": "Logros",
+      "progress": "Progreso"
+    },
+    "leaderboard": {
+      "title": "Clasificación",
+      "player": "Lector",
+      "points": "Puntos",
+      "streak": "Racha"
+    },
+    "period": {
+      "weekly": "Semanal",
+      "monthly": "Mensual",
+      "all": "Todo tiempo"
+    },
+    "actions": {
+      "logReading": "Registrar lectura",
+      "saveLog": "Guardar registro",
+      "viewAll": "Ver todos los logros"
+    },
+    "log": {
+      "subtitle": "Registra páginas y minutos para mantener tu racha.",
+      "pages": "Páginas",
+      "minutes": "Minutos"
+    },
+    "toasts": {
+      "streakContinued": "¡Racha continuada! 🔥",
+      "badgeEarned": "Nueva insignia: {{name}}",
+      "activityRecorded": "Actividad registrada"
+    },
+    "locked": "Bloqueado",
+    "badgeEarnedOn": "Obtenida el {{date}}",
+    "badges": {
+      "firstRead": {
+        "name": "Primera lectura",
+        "desc": "Registra tu primera actividad de lectura"
+      },
+      "streak7": {
+        "name": "Racha de 7 días",
+        "desc": "Lee 7 días seguidos"
+      },
+      "streak30": {
+        "name": "Racha de 30 días",
+        "desc": "Lee 30 días seguidos"
+      },
+      "pages100": {
+        "name": "100 páginas",
+        "desc": "Lee 100 páginas en total"
+      },
+      "earlyBird": {
+        "name": "Madrugador",
+        "desc": "Lee temprano por la mañana en 3 días"
+      },
+      "nightOwl": {
+        "name": "Noctámbulo",
+        "desc": "Lee tarde en la noche en 3 días"
+      }
+    },
+    "progress": {
+      "pages100": "Páginas hacia 100",
+      "earlyBird": "Progreso de Madrugador",
+      "nightOwl": "Progreso de Noctámbulo"
+    }
   }
 }
