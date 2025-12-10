@@ -53,14 +53,43 @@ function lsWrite(items) {
   }
 }
 
+function withSimulatedBorrowed(items) {
+  // Ensure resilience: if 'borrowed' missing, simulate based on availability or random fallback
+  return (items || []).map((b) => {
+    if (typeof b.borrowed === 'boolean') return b;
+    // prefer using available flag if present
+    if (typeof b.available === 'boolean') {
+      return { ...b, borrowed: !b.available };
+    }
+    // otherwise simulate as false to avoid inflating counts
+    return { ...b, borrowed: false };
+  });
+}
+
+function ensureCreatedAt(items) {
+  return (items || []).map((b) => {
+    if (b.createdAt) return b;
+    // Approximate createdAt by using id numeric or now
+    let created = Date.now();
+    const idNum = Number(b.id);
+    if (Number.isFinite(idNum) && idNum > 0) {
+      // spread older ids earlier
+      created = Date.now() - (1000 * 60 * 60 * 24 * (100 - Math.min(idNum, 100)));
+    }
+    return { ...b, createdAt: new Date(created).toISOString() };
+  });
+}
+
 async function mockLoad() {
   const existing = lsRead();
-  if (Array.isArray(existing)) return existing;
+  if (Array.isArray(existing)) return ensureCreatedAt(withSimulatedBorrowed(existing));
   // seed from static mocks once
   const data = await import('../mocks/books.json');
   const items = data.default || data;
-  lsWrite(items);
-  return items;
+  // augment seeded data with simulated fields
+  const enhanced = ensureCreatedAt(withSimulatedBorrowed(items));
+  lsWrite(enhanced);
+  return enhanced;
 }
 
 function mockNextId(items) {
@@ -78,7 +107,8 @@ export async function listBooks(query = '') {
     const url = new URL('/books', API_BASE);
     if (query) url.searchParams.set('q', query);
     try {
-      return await fetchJson(url.toString());
+      const data = await fetchJson(url.toString());
+      return Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
     } catch (e) {
       console.warn('API failed, falling back to mock data:', e.message);
     }
@@ -121,7 +151,8 @@ export async function createBook(payload) {
    * Create a book via API POST /books; else persist into localStorage.
    * payload: { title, author, genre, year }
    */
-  const body = JSON.stringify(normalizeBookInput(payload));
+  const normalized = normalizeBookInput(payload);
+  const body = JSON.stringify(normalized);
   if (API_BASE) {
     const url = new URL('/books', API_BASE);
     try {
@@ -140,7 +171,9 @@ export async function createBook(payload) {
     id: mockNextId(items),
     available: true,
     rating: 0,
-    ...JSON.parse(body),
+    borrowed: false,
+    createdAt: new Date().toISOString(),
+    ...normalized,
   };
   const next = [newItem, ...items];
   lsWrite(next);
@@ -195,4 +228,59 @@ export async function deleteBook(id) {
   const next = items.filter(b => String(b.id) !== String(id));
   lsWrite(next);
   return true;
+}
+
+// PUBLIC_INTERFACE
+export async function getCountsSummary() {
+  /**
+   * Returns { total: number, borrowed: number }
+   * API-first: tries /books and computes; if backend provides /books/summary use that if present
+   */
+  // Try an optional summary endpoint if available
+  if (API_BASE) {
+    try {
+      const urlSummary = new URL('/books/summary', API_BASE);
+      const data = await fetchJson(urlSummary.toString());
+      if (data && typeof data.total === 'number') {
+        return {
+          total: Number(data.total) || 0,
+          borrowed: Number(data.borrowed) || 0,
+        };
+      }
+    } catch {
+      // ignore, fallback to listing
+    }
+  }
+
+  const list = await listBooks('');
+  const safe = withSimulatedBorrowed(list);
+  const total = safe.length;
+  const borrowed = safe.reduce((acc, b) => acc + (b.borrowed ? 1 : 0), 0);
+  return { total, borrowed };
+}
+
+// PUBLIC_INTERFACE
+export async function getRecentBooks(limit = 5) {
+  /**
+   * Returns an array of most recent books, sorted by createdAt descending.
+   * API-first: GET /books?sort=createdAt&limit=N
+   */
+  if (API_BASE) {
+    try {
+      const url = new URL('/books', API_BASE);
+      url.searchParams.set('sort', 'createdAt');
+      url.searchParams.set('limit', String(limit));
+      const data = await fetchJson(url.toString());
+      const items = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+      return items;
+    } catch (e) {
+      console.warn('API recent failed; falling back to mock data:', e.message);
+    }
+  }
+  const items = await mockLoad();
+  const withDates = ensureCreatedAt(items);
+  const sorted = withDates
+    .slice()
+    .sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+  return sorted.slice(0, limit);
 }

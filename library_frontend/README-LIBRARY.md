@@ -5,6 +5,7 @@ This React app implements a clean, responsive Library Management UI featuring:
 - Responsive grid of book cards
 - Details modal and deep link route /books/:id
 - Book Management page (/manage) with Create, Update, Delete
+- Dashboard (/dashboard) with summary cards and recent additions
 - Favorites and Reviews with API-first behavior and localStorage fallback
 - Env-aware data service (REACT_APP_API_BASE or REACT_APP_BACKEND_URL), with localStorage-backed mock fallback
 - Accessibility for modals/dialogs (ESC close, focus trap, alt text, labels and aria states)
@@ -19,6 +20,27 @@ Scripts:
 - npm run build
 
 Design theme: Ocean Professional
+
+## Dashboard
+
+Navigate to "Dashboard" from the top navbar or /dashboard.
+
+Shows:
+- Summary cards:
+  - Total Books (count of all books)
+  - Borrowed Books (books with `borrowed: true`; if not present, inferred from `available === false` or simulated as false in fallback)
+- Recent Additions:
+  - List of latest books sorted by `createdAt` (ISO timestamp), showing title, author, and formatted timestamp.
+
+Backend expectations (API-first):
+- GET {BASE}/books?sort=createdAt&limit=5 -> returns array (preferred) or { items: [] }
+- Optional: GET {BASE}/books/summary -> returns { total: number, borrowed: number }
+- Otherwise, the app will GET {BASE}/books and compute stats client-side.
+
+Fallback (no API):
+- Uses localStorage key `ocean-library-books` and derives:
+  - `createdAt`: generated when missing
+  - `borrowed`: inferred from `available === false`, otherwise simulated as `false`
 
 ## Book Management
 
@@ -77,11 +99,14 @@ Book endpoints expected when API is configured:
 - GET    {BASE}/books/:id
 - PUT    {BASE}/books/:id
 - DELETE {BASE}/books/:id
+- OPTIONAL: GET {BASE}/books/summary
+- OPTIONAL: GET {BASE}/books?sort=createdAt&limit=N
 
 When API is not configured or a request fails, the app falls back to mock data persisted in localStorage:
 - Key: ocean-library-books
 - Initially seeded from src/mocks/books.json
 - createBook, updateBook, deleteBook persist to localStorage
+- createdAt and borrowed are inferred/simulated if missing
 
 Form payloads:
 - { title, author, genre, year }
@@ -105,4 +130,3 @@ REACT_APP_API_BASE=https://api.example.com
 REACT_APP_PORT=3000
 
 If neither REACT_APP_API_BASE nor REACT_APP_BACKEND_URL is set, the app operates entirely on localStorage-backed mock data.
-
