@@ -1,0 +1,98 @@
+[
+  {
+    "id": "1",
+    "title": "The Ocean Between Us",
+    "author": "Sarah Monroe",
+    "year": 2018,
+    "genres": ["Fiction", "Drama"],
+    "isbn": "9780000000001",
+    "rating": 4.2,
+    "available": true,
+    "summary": "A moving story about distance, resilience, and the ties that bind.",
+    "cover": ""
+  },
+  {
+    "id": "2",
+    "title": "Learning React Quickly",
+    "author": "James Fowler",
+    "year": 2021,
+    "genres": ["Technology", "Programming"],
+    "isbn": "9780000000002",
+    "rating": 4.5,
+    "available": true,
+    "summary": "A practical guide to building modern UIs with React.",
+    "cover": ""
+  },
+  {
+    "id": "3",
+    "title": "Deep Sea Wonders",
+    "author": "Lena Ortiz",
+    "year": 2014,
+    "genres": ["Science", "Nature"],
+    "isbn": "9780000000003",
+    "rating": 3.9,
+    "available": false,
+    "summary": "Explore the mysterious life forms and ecosystems of the deep ocean.",
+    "cover": ""
+  },
+  {
+    "id": "4",
+    "title": "Amber Skies",
+    "author": "Harvey Finn",
+    "year": 2012,
+    "genres": ["Fiction", "Adventure"],
+    "isbn": "9780000000004",
+    "rating": 4.1,
+    "available": true,
+    "summary": "An epic journey across continents under breathtaking sunsets.",
+    "cover": ""
+  },
+  {
+    "id": "5",
+    "title": "Designing with Systems",
+    "author": "Maya Patel",
+    "year": 2019,
+    "genres": ["Design", "Technology"],
+    "isbn": "9780000000005",
+    "rating": 4.8,
+    "available": true,
+    "summary": "A holistic approach to system-oriented product design.",
+    "cover": ""
+  },
+  {
+    "id": "6",
+    "title": "The History of Libraries",
+    "author": "Edgar Wells",
+    "year": 2004,
+    "genres": ["History", "Non-fiction"],
+    "isbn": "9780000000006",
+    "rating": 3.7,
+    "available": true,
+    "summary": "From ancient scrolls to digital collections, the evolution of libraries.",
+    "cover": ""
+  },
+  {
+    "id": "7",
+    "title": "Patterns of Code",
+    "author": "Iris Nakamura",
+    "year": 2016,
+    "genres": ["Technology"],
+    "isbn": "9780000000007",
+    "rating": 4.0,
+    "available": false,
+    "summary": "Understanding reusable structures that shape robust software.",
+    "cover": ""
+  },
+  {
+    "id": "8",
+    "title": "Sailing the Blue",
+    "author": "Tomás Alvarez",
+    "year": 2011,
+    "genres": ["Travel", "Adventure"],
+    "isbn": "9780000000008",
+    "rating": 3.5,
+    "available": true,
+    "summary": "A sailor's account of crossing oceans and finding serenity at sea.",
+    "cover": ""
+  }
+]
