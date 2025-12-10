@@ -5,6 +5,7 @@ This React app implements a clean, responsive Library Management UI featuring:
 - Responsive grid of book cards
 - Details modal and deep link route /books/:id
 - Book Management page (/manage) with Create, Update, Delete
+- Favorites and Reviews with API-first behavior and localStorage fallback
 - Env-aware data service (REACT_APP_API_BASE or REACT_APP_BACKEND_URL), with localStorage-backed mock fallback
 - Accessibility for modals/dialogs (ESC close, focus trap, alt text, labels and aria states)
 
@@ -30,13 +31,47 @@ Features:
 - Client-side validation with accessible labels and error messages
 - Optimistic updates with automatic list refresh and error handling
 
+## Favorites
+
+- Mark/unmark a book as favorite from:
+  - Book card (star button on the top-right of cover)
+  - Book details modal (Favorite button in header)
+- Filter favorites from Home via the "☆ Favorites" toggle next to search.
+
+Persistence (API-first):
+- If REACT_APP_API_BASE or REACT_APP_BACKEND_URL is configured, the app attempts API endpoints:
+  - GET    {BASE}/favorites -> returns ["1","2",... ] or { ids: ["1","2"] }
+  - POST   {BASE}/favorites/:id/toggle -> toggles and returns updated list OR
+  - PUT    {BASE}/favorites/:id (set) and DELETE {BASE}/favorites/:id (unset) as fallback
+- If API not configured/unavailable, localStorage is used:
+  - Key: ocean-library-favorites (array of book IDs)
+
+## Reviews
+
+- In the Book Details modal:
+  - See a Reviews list with average rating.
+  - Submit a new review with an interactive 1..5 star rating and text.
+- Average rating shown on cards and in details (computed from reviews when available).
+
+Persistence (API-first):
+- GET  {BASE}/books/:id/reviews -> returns array [{ id, user, rating, text, createdAt }, ...] or { reviews: [...] }
+- POST {BASE}/books/:id/reviews with body { rating: 1..5, text: string } -> creates review, returns new review or list.
+- Fallback: localStorage
+  - Key: ocean-library-reviews (object keyed by bookId: string -> array of reviews)
+
+Review data:
+- rating: integer 1..5
+- text: string
+- user: optional (defaults "Anonymous" in fallback)
+- createdAt: ISO string
+
 ## Data Service (API-first with mock fallback)
 
 The service checks for an API base URL using the first non-empty of:
 - REACT_APP_API_BASE
 - REACT_APP_BACKEND_URL
 
-Endpoints expected when API is configured:
+Book endpoints expected when API is configured:
 - GET    {BASE}/books
 - POST   {BASE}/books
 - GET    {BASE}/books/:id
