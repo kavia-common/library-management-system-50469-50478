@@ -270,5 +270,31 @@
       "earlyBird": "Early Bird progress",
       "nightOwl": "Night Owl progress"
     }
-  }
+  },
+  "Events": "Events",
+  "Calendar": "Calendar",
+  "Week": "Week",
+  "List": "List",
+  "Filters": "Filters",
+  "Categories": "Categories",
+  "RSVP": "RSVP",
+  "Going": "Going",
+  "Interested": "Interested",
+  "Not going": "Not going",
+  "Remind me": "Remind me",
+  "Add to calendar": "Add to calendar",
+  "Location": "Location",
+  "Organizer": "Organizer",
+  "Capacity": "Capacity",
+  "Seats left": "Seats left",
+  "Challenges": "Challenges",
+  "Join": "Join",
+  "Leave": "Leave",
+  "Progress": "Progress",
+  "pages": "pages",
+  "books": "books",
+  "All": "All",
+  "Add progress": "Add progress",
+  "monthNames": ["January","February","March","April","May","June","July","August","September","October","November","December"],
+  "weekdayShort": ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
 }

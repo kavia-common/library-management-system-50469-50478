@@ -5,8 +5,13 @@ const envBase =
 
 /**
  * Resolve API base from env; default to relative "/api" if not set.
+ * PUBLIC_INTERFACE
  */
-const API_BASE = envBase || '/api';
+export function getApiBase() {
+  return envBase || '/api';
+}
+
+const API_BASE = getApiBase();
 
 // Simple fetch helper
 async function apiFetch(path, options = {}) {
@@ -159,6 +164,22 @@ const defaultPreferences = {
 };
 
 // Seed mock notifications with different types
+function readStorage(key, fallback) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+function writeStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore
+  }
+}
 function seedNotificationsIfEmpty() {
   const existing = readStorage(NOTIF_KEY, []);
   if (existing.length > 0) return;
@@ -202,23 +223,6 @@ function seedPreferencesIfEmpty() {
   }
 }
 seedPreferencesIfEmpty();
-
-function readStorage(key, fallback) {
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
-}
-function writeStorage(key, value) {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // ignore
-  }
-}
 
 // PUBLIC_INTERFACE
 export function fetchNotifications() {
@@ -277,7 +281,6 @@ function startScheduler() {
   if (schedulerStarted) return;
   schedulerStarted = true;
 
-  // This ticker checks for due books approaching within 3 days and generates reminders
   const TICK_MS = 60 * 1000; // 60s
   const windowMs = 3 * 24 * 60 * 60 * 1000;
 
@@ -292,7 +295,6 @@ function startScheduler() {
       if (n.type === 'due_date' && n.bookId) existingDueForBook.set(n.bookId, true);
     }
 
-    // For mock purposes, create a loan-like list using mock books with synthetic due dates
     const mockLoans = [
       { bookId: '1', bookTitle: 'The Ocean Between Us', dueAt: now + 2 * 24 * 60 * 60 * 1000 },
       { bookId: '3', bookTitle: 'Seas and Stories', dueAt: now + 1 * 24 * 60 * 60 * 1000 + 3600 * 1000 },

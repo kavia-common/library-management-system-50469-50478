@@ -99,17 +99,18 @@ function daysBetweenISO(a, b) {
 }
 
 // Mock leaderboard seed
-function seedLeaderboardIfEmpty() {
+function readOrSeedLeaderboard() {
   const existing = readStorage(LB_KEY, null);
-  if (existing) return;
+  if (existing) return existing;
   const sample = [
     { userId: 'u_alpha', displayName: 'Avery', points: 820, currentStreak: 12, pagesRead: 1240 },
     { userId: 'u_bravo', displayName: 'Blake', points: 610, currentStreak: 5, pagesRead: 820 },
     { userId: 'u_charlie', displayName: 'Casey', points: 520, currentStreak: 7, pagesRead: 690 }
   ];
   writeStorage(LB_KEY, sample);
+  return sample;
 }
-seedLeaderboardIfEmpty();
+readOrSeedLeaderboard();
 
 // PUBLIC_INTERFACE
 export async function getUserStats() {
@@ -179,13 +180,11 @@ export async function recordReadingActivity({ pages = 0, minutes = 0, timestamp 
     let awardedEarly = false;
     let awardedNight = false;
     if (hour >= 5 && hour < 8) {
-      // Count unique day occurrences
       awardedEarly = true;
     }
     if (hour >= 22 || hour < 2) {
       awardedNight = true;
     }
-    // To avoid double counting, keep a per-day marker set
     const dayKey = `gamification:dayMarkers:${todayIso}`;
     const dayMarkers = readStorage(dayKey, { early: false, night: false });
     if (awardedEarly && !dayMarkers.early) {
@@ -224,15 +223,13 @@ export async function recordReadingActivity({ pages = 0, minutes = 0, timestamp 
     if ((current.currentStreak || 0) >= 30) award('streak_30');
     if (beforePagesProgress < 100 && current.progress.pages100 >= 100) award('pages_100');
 
-    // early bird after 3 days
     if ((current.progress.earlyBirdDays || 0) >= 3) award('early_bird');
-    // night owl after 3 days
     if ((current.progress.nightOwlDays || 0) >= 3) award('night_owl');
 
     writeStorage(STATS_KEY, current);
 
     // Update leaderboard mock
-    const lb = readStorage(LB_KEY, []);
+    const lb = readStorage(LB_KEY, []) || [];
     const uid = current.userId || getOrCreateUserId();
     const displayName = current.displayName || 'You';
     const idx = lb.findIndex((u) => u.userId === uid);
@@ -247,14 +244,12 @@ export async function recordReadingActivity({ pages = 0, minutes = 0, timestamp 
     else lb.push(myRow);
     writeStorage(LB_KEY, lb);
 
-    // Fire storage event for other tabs
     try {
       const SE = typeof StorageEvent !== 'undefined' ? StorageEvent : null;
       if (SE) {
         window.dispatchEvent(new SE('storage', { key: STATS_KEY, newValue: JSON.stringify(current) }));
         window.dispatchEvent(new SE('storage', { key: LB_KEY, newValue: JSON.stringify(lb) }));
       } else {
-        // Fallback: dispatch generic Event for test environments
         window.dispatchEvent(new Event('storage'));
       }
     } catch {}
@@ -275,7 +270,6 @@ export async function getLeaderboard({ period = 'all' } = {}) {
     return data;
   } catch {
     const lb = readStorage(LB_KEY, []) || [];
-    // Simple mock filter: weekly/monthly -> scale points to simulate period, else all
     let list = [...lb];
     if (period === 'weekly') {
       list = list.map((u) => ({ ...u, points: Math.round(u.points * 0.25) }));
@@ -291,4 +285,13 @@ export async function getLeaderboard({ period = 'all' } = {}) {
 export function listBadgesCatalog() {
   /** Return static badge catalog metadata. */
   return Object.values(BADGES);
+}
+
+// PUBLIC_INTERFACE
+export function awardPoints({ points, reason }) {
+  /** Mock points award; replace with backend integration if available. */
+  try { 
+    // eslint-disable-next-line no-console
+    console.log('[Gamification] +%d points for %s', points, reason); 
+  } catch {}
 }

@@ -1,0 +1,15 @@
+.evd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.evd-card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; width: min(720px, 92vw); max-height: 80vh; overflow: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+.evd-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
+.evd-title { margin: 0; color: #111827; }
+.evd-close { background: none; border: none; font-size: 22px; cursor: pointer; color: #374151; }
+.evd-body { padding: 14px; color: #111827; }
+.evd-time { color: #374151; margin-bottom: 8px; }
+.evd-desc { margin: 8px 0 12px 0; color: #111827; }
+.evd-meta { color: #374151; display: grid; gap: 6px; }
+.evd-actions { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-top: 1px solid #e5e7eb; background: #f9fafb; }
+.evd-rsvp { display: flex; align-items: center; gap: 6px; }
+.evd-btn { background: #f3f4f6; color: #111827; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; }
+.evd-btn.active { background: #2563EB; color: white; border-color: #2563EB; }
+.evd-link { background: none; border: none; color: #2563EB; padding: 6px 8px; border-radius: 8px; }
+.evd-link:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }

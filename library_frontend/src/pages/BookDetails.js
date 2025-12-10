@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getBookById, getUsersAlsoBorrowed } from '../services/api';
+import { getBookById, getUsersAlsoBorrowed, readFavorites, toggleFavorite } from '../services/api';
 import BookDetailModal from '../components/BookDetailModal';
 import { useTranslation } from 'react-i18next';
 import RecommendationRow from '../components/RecommendationRow';
-import { readFavorites, toggleFavorite } from '../services/api';
 import { recordReadingActivity } from '../services/gamification';
 import { useToast } from '../components/ToastContext';
+import { getEvents } from '../services/events';
 
 // PUBLIC_INTERFACE
 export default function BookDetails() {
   /**
    * Book details route page; loads by id and renders in-page details.
-   * Also provides a Quick View modal and a back link.
-   * Shows "Users also borrowed" recommendations for this book.
+   * Shows "Users also borrowed" and contextual banner if book club meeting references this book.
    */
   const { id } = useParams();
   const [book, setBook] = useState(null);
@@ -25,6 +24,7 @@ export default function BookDetails() {
 
   const [also, setAlso] = useState({ loading: true, items: [] });
   const [favorites, setFavorites] = useState(readFavorites());
+  const [relatedEvent, setRelatedEvent] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -53,6 +53,18 @@ export default function BookDetails() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    async function fetchRelated() {
+      if (!book?.isbn) return;
+      const events = await getEvents({ category: 'book_club' });
+      const match = events.find((e) => e.referencedBookIsbn === book.isbn);
+      if (mounted) setRelatedEvent(match || null);
+    }
+    fetchRelated();
+    return () => { mounted = false; };
+  }, [book]);
+
   if (status.loading) {
     return <div className="card" style={{ padding: 16 }}><p>{t('details.loading')}</p></div>;
   }
@@ -74,6 +86,12 @@ export default function BookDetails() {
 
   return (
     <section aria-label="Book details">
+      {relatedEvent && (
+        <div className="info-banner" style={{ background:'#EFF6FF', border:'1px solid #BFDBFE', padding:8, borderRadius:8, marginBottom:8 }}>
+          📚 Book club meeting scheduled: <strong>{relatedEvent.title}</strong> on {new Date(relatedEvent.start).toLocaleString()} — <Link to="/events">View</Link>
+        </div>
+      )}
+
       <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Link to="/" className="btn" aria-label={t('details.back')}>{t('details.back')}</Link>
         <button className="btn" onClick={() => setOpen(true)}>{t('details.quickView')}</button>

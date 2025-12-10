@@ -270,5 +270,31 @@
       "earlyBird": "Progreso de Madrugador",
       "nightOwl": "Progreso de Noctámbulo"
     }
-  }
+  },
+  "Events": "Eventos",
+  "Calendar": "Calendario",
+  "Week": "Semana",
+  "List": "Lista",
+  "Filters": "Filtros",
+  "Categories": "Categorías",
+  "RSVP": "Confirmar asistencia",
+  "Going": "Asistiré",
+  "Interested": "Interesado",
+  "Not going": "No asistiré",
+  "Remind me": "Recuérdame",
+  "Add to calendar": "Agregar al calendario",
+  "Location": "Ubicación",
+  "Organizer": "Organizador",
+  "Capacity": "Capacidad",
+  "Seats left": "Lugares disponibles",
+  "Challenges": "Retos",
+  "Join": "Unirse",
+  "Leave": "Salir",
+  "Progress": "Progreso",
+  "pages": "páginas",
+  "books": "libros",
+  "All": "Todos",
+  "Add progress": "Añadir progreso",
+  "monthNames": ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
+  "weekdayShort": ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"]
 }

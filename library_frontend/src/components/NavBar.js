@@ -76,7 +76,7 @@ export default function NavBar() {
       }}
       aria-label="Top navigation"
     >
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             aria-hidden="true"
@@ -97,8 +97,15 @@ export default function NavBar() {
             </div>
           </div>
         </div>
+
+        <div style={{ marginLeft: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+          <Link to="/" className="btn">Home</Link>
+          <Link to="/events" className="btn">Events</Link>
+          <Link to="/gamification" className="btn">Gamification</Link>
+          {showStaffLink ? (<Link to="/staff" className="btn" aria-label={t('staff.nav.title')}>{t('staff.nav.title')}</Link>) : null}
+        </div>
+
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ display: 'none' }} aria-hidden="true" />
           {stats ? (
             <GamificationSummary
               stats={stats}
@@ -115,18 +122,6 @@ export default function NavBar() {
             ✨
           </button>
           <NotificationsBell unreadCount={unread} onClick={() => window.dispatchEvent(new Event('openNotifications'))} ariaControls="notifications-center" />
-          <button
-            className="btn"
-            onClick={() => navigate('/gamification')}
-            aria-label={t('gam.pageTitle')}
-            title={t('gam.pageTitle')}
-          >
-            ✨
-          </button>
-
-          {showStaffLink ? (
-            <Link to="/staff" className="btn" aria-label={t('staff.nav.title')}>{t('staff.nav.title')}</Link>
-          ) : null}
 
           {mock && (
             <div className="card" aria-label={t('staff.roleSwitcher')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px' }}>

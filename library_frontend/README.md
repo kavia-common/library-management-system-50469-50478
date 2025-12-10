@@ -15,6 +15,7 @@ React frontend for the Library app with a modern, responsive UI.
 - Notifications Center with mock data and preferences (Due Dates, New Arrivals, Personalized)
 - Recommendations: Trending, Favorites-based, and Users-also-borrowed
 - Gamification: Achievements, daily streaks, and leaderboard (with mock localStorage fallback)
+- Events & Activities: Calendar/list, event details with RSVP/reminders, and Reading Challenges
 
 ## Getting Started
 - Install: `npm install`
@@ -33,6 +34,7 @@ Optional variables you might set:
 - `REACT_APP_FRONTEND_URL`
 - `REACT_APP_WS_URL`
 - `REACT_APP_NODE_ENV`, `REACT_APP_ENABLE_SOURCE_MAPS`, `REACT_APP_PORT`, etc.
+- `REACT_APP_FEATURE_FLAGS` (JSON) for optional flags like `{ "gamification": true }`
 
 Create a `.env` file (do not commit secrets):
 ```
@@ -59,46 +61,84 @@ Page/Route:
 
 State & Services:
 - `src/services/gamification.js` exports:
-  - getUserStats() -> { points, currentStreak, bestStreak, lastReadDate, badges: [...], progress: {...}, pagesRead, minutesRead }
-  - recordReadingActivity({ pages, minutes }) -> updates streak, badges, points; returns updated stats and `_newBadges` (mock)
-  - getLeaderboard({ period }) -> array of { rank, userId, displayName, points, currentStreak, pagesRead }
-  - listBadgesCatalog() -> badge catalog
-  - getOrCreateUserId() -> persisted local user id
-- If REACT_APP_API_BASE is unset or backend endpoints are unavailable, a mock service persists to localStorage:
-  - streak increments for consecutive days; resets otherwise
-  - badges: First Read, 7-day Streak, 30-day Streak, 100 Pages, Early Bird (3 mornings), Night Owl (3 nights)
-  - leaderboard merges your local stats into seeded sample data
+  - getUserStats(), recordReadingActivity(), getLeaderboard(), listBadgesCatalog(), getOrCreateUserId()
+- Mock mode uses localStorage; set REACT_APP_API_BASE to switch to real backend.
 
-Backend Contract (switch-ready):
-- GET /gamification/stats -> returns current user stats
-- POST /gamification/activity { pages, minutes, timestamp? } -> returns updated stats
-- GET /gamification/leaderboard?period=weekly|monthly|all -> returns leaderboard rows
-Stats example:
+## Events & Activities
+
+Route:
+- `/events` — EventsPage with Calendar + List, Filters, and Reading Challenges section.
+
+Components:
+- EventsCalendar (month/week/list toggles) with keyboard navigation and ARIA roles
+- EventsList (accessible grouped list)
+- EventDetails modal with full details, RSVP (Going/Interested/Not going), Add to calendar (ICS), and Remind me (1h/1d)
+- ChallengesSection for reading challenges (join/leave, progress)
+
+Services:
+- `src/services/events.js` exports:
+  - getEvents({ from, to, category, libraryId })
+  - getEventById(id)
+  - rsvpEvent(id, status) // 'going' | 'interested' | 'not_going' | null
+  - getRsvps()
+  - buildIcs(event), downloadIcs(event)
+  - remindMe(eventId, option) // '1h' | '1d'
+  - getChallenges(), joinChallenge(id), leaveChallenge(id), recordChallengeProgress(id, { amount })
+
+Mock data and persistence (when REACT_APP_API_BASE is not set):
+- Seeds sample events: library events, monthly book club (simple recurrence), workshops.
+- Seeds reading challenges (“20 Books in 2025”, “Winter Reading Sprint”).
+- Persists to localStorage keys:
+  - `events:data`, `events:rsvps`, `events:challenges`, `events:reminders`.
+
+Suggested backend contracts (switch-ready):
+- GET `/events?from=&to=&category=&libraryId=` -> `[Event]`
+- GET `/events/:id` -> `Event`
+- POST `/events/:id/rsvp` body `{ status: 'going'|'interested'|'not_going' }`
+- GET `/events/rsvps` -> `{ [eventId]: 'going'|'interested'|'not_going' }`
+- GET `/challenges` -> `{ list: Challenge[], memberships: { [challengeId]: { progress:number, joinedAt } } }`
+- POST `/challenges/:id/join`
+- POST `/challenges/:id/leave`
+- POST `/challenges/:id/progress` body `{ amount:number }`
+
+Event model (suggestion):
+```
 {
-  "userId": "u_xxx",
-  "displayName": "You",
-  "points": 120,
-  "pagesRead": 80,
-  "minutesRead": 60,
-  "currentStreak": 3,
-  "bestStreak": 5,
-  "lastReadDate": "2025-01-12",
-  "badges": [{ "id": "first_read", "nameKey": "gam.badges.firstRead.name", "descKey": "gam.badges.firstRead.desc", "emoji":"📖", "earnedAt":"2025-01-10T10:00:00Z" }],
-  "progress": { "pages100": 80, "earlyBirdDays": 2, "nightOwlDays": 1 }
+  id: string,
+  title: string,
+  category: 'library'|'book_club'|'workshop'|'challenge',
+  description: string,
+  organizer?: string,
+  location?: { libraryId: string, room?: string },
+  start: ISOString,
+  end: ISOString,
+  capacity?: number,
+  referencedBookIsbn?: string
 }
+```
 
-Integration:
-- BookDetails has a “Log reading” button (5 pages / 10 minutes quick log).
-- Home/NavBar display the GamificationSummary linking to the /gamification page.
-- Toasts notify about recorded activity, continued streaks, or newly earned badges.
+Challenge model:
+```
+{
+  id: string,
+  title: string,
+  description: string,
+  unit: 'pages'|'books',
+  target: number,
+  start: ISOString,
+  end: ISOString,
+  active: boolean
+}
+```
 
-Styling & Accessibility:
-- Ocean Professional theme, focus-visible outlines, ARIA roles for progress and table, keyboard navigation in leaderboard.
-- Reduced-motion friendly: no heavy animations when prefers-reduced-motion is set.
+Examples:
+- Filter by category: `getEvents({ category: 'book_club' })`
+- Filter by date range: `getEvents({ from: '2025-01-01', to: '2025-02-01' })`
+- RSVP example: `rsvpEvent('evt-1','going')`
+- Join challenge: `joinChallenge('ch-20-books-2025')` then `recordChallengeProgress('ch-20-books-2025', { amount: 1 })`
 
-Switching to a real backend:
-- Set REACT_APP_API_BASE to your backend; the app will call the endpoints above.
-- Ensure authentication and user identity handling is implemented server-side; on the frontend we keep a simple local userId only for mock mode.
+Notifications integration:
+- "Remind me" schedules a mock notification at event start minus 1 hour or 1 day, storing in localStorage and optionally calling a notifications mock. Replace with a real notification service as needed.
 
 ## Notifications
 Mock notifications with Preferences are persisted in localStorage. See `src/components/NotificationsCenter.js`.
@@ -107,6 +147,7 @@ Mock notifications with Preferences are persisted in localStorage. See `src/comp
 - Modal dialogs: role="dialog", Escape to close.
 - Buttons with ARIA labels.
 - Live region for toasts.
+- Calendar and lists: ARIA roles (grid/list), keyboard navigation, focus-visible outlines.
 
 ## Project Structure
 - `src/components` — UI components
@@ -125,19 +166,6 @@ Routes:
 
 Auth & RBAC:
 - src/context/AuthContext.js provides currentUser, hasRole(), hasPermission(), loginAsRole() for mock.
-- Default role-permission map:
-  - ADMIN: [manage_libraries, manage_staff, manage_inventory, view_reports]
-  - LIBRARIAN: [manage_inventory, view_reports]
-  - ASSISTANT: [view_reports]
-
-Services:
-- src/services/staff.js exports:
-  - getLibraries({ query, page, pageSize }), createLibrary(data), updateLibrary(id, data), deleteLibrary(id)
-  - getStaffUsers(), updateStaffUserRoles(userId, roles)
-  - getRoles(), updateRolePermissions(role, permissions)
-  - getActivityLog()
-- Mock mode uses localStorage keys: staff:libraries, staff:users, staff:roles, staff:activity. Seeded with sample data.
-- Set REACT_APP_API_BASE to switch to real backend; endpoints expected under /staff/*.
 
 Suggested Backend Contracts:
 - GET /staff/libraries?q=&page=&pageSize=
@@ -151,10 +179,9 @@ Suggested Backend Contracts:
 - PUT /staff/roles/:role { permissions:[] } -> updated roles map
 - GET /staff/activity -> [{ id, actor, action, meta?, timestamp }]
 
-Accessibility & Theme:
+Styling & Theme:
 - Ocean Professional styling with keyboard-friendly controls, ARIA labels for tables and dialogs.
 
 Tests:
-- Protected route behavior
-- Libraries CRUD updates in mock store
-- Role change reflects in users table
+- Staff protected route behavior and CRUD in mock store
+- Events: calendar render, RSVP updates, reminders, challenges progress, i18n keys resolve

@@ -6,6 +6,7 @@ import { ThemeProvider } from './theme/ThemeContext';
 import Home from './pages/Home';
 import BookDetails from './pages/BookDetails';
 import GamificationPage from './pages/GamificationPage';
+import EventsPage from './pages/EventsPage';
 import NavBar from './components/NavBar';
 import NotificationsCenter from './components/NotificationsCenter';
 import PreferencesModal from './components/PreferencesModal';
@@ -27,7 +28,6 @@ function AppShell() {
   const [openCenter, setOpenCenter] = React.useState(false);
   const [openPrefs, setOpenPrefs] = React.useState(false);
 
-  // Expose controls to NavBar via context or window events if needed; here we attach to window for simplicity.
   React.useEffect(() => {
     const openCenterHandler = () => setOpenCenter(true);
     const openPrefsHandler = () => setOpenPrefs(true);
@@ -52,6 +52,7 @@ function AppShell() {
           <Route path="/" element={<Home />} />
           <Route path="/books/:id" element={<BookDetails />} />
           <Route path="/gamification" element={<GamificationPage />} />
+          <Route path="/events" element={<EventsPage />} />
 
           <Route path="/staff/login" element={<StaffLogin />} />
           <Route path="/staff/forbidden" element={<Forbidden />} />
@@ -83,6 +84,7 @@ function App() {
    * Routes:
    *  - "/" -> Home (search + grid)
    *  - "/books/:id" -> BookDetails
+   *  - "/events" -> Events & Activities page
    *  - "/staff/*" -> Staff area (guarded)
    */
   return (
