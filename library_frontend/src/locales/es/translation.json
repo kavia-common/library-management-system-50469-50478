@@ -114,14 +114,5 @@
   },
   "common": {
     "and": "y"
-  },
-  "offline": {
-    "online": "En línea",
-    "offline": "Sin conexión",
-    "offlineToast": "Estás sin conexión. Los cambios se sincronizarán cuando vuelvas en línea.",
-    "onlineToast": "De nuevo en línea. Intentando sincronizar cambios…",
-    "synced": "Todos los cambios sincronizados",
-    "updateAvailable": "Hay una nueva versión. Recarga para actualizar.",
-    "updated": "Aplicación actualizada. Estás en la última versión."
   }
 }

@@ -3,15 +3,12 @@ import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import NotificationsBell from './NotificationsBell';
 import { fetchNotifications } from '../services/api';
-import OfflineIndicator from './OfflineIndicator';
-import { useToast } from './ToastContext';
 
 // PUBLIC_INTERFACE
 export default function NavBar() {
-  /** Top navigation bar with brand, language switcher, notifications, preferences, theme toggle, and offline indicator. */
+  /** Top navigation bar with brand, language switcher, notifications, preferences, and theme toggle. */
   const { theme, toggleTheme } = useTheme();
   const { t, i18n } = useTranslation();
-  const { showToast } = useToast();
   const [unread, setUnread] = React.useState(fetchNotifications().filter(n => !n.read).length);
 
   React.useEffect(() => {
@@ -20,41 +17,6 @@ export default function NavBar() {
     window.addEventListener('storage', sync);
     return () => { clearInterval(id); window.removeEventListener('storage', sync); };
   }, []);
-
-  // SW update toasts
-  React.useEffect(() => {
-    const onUpdate = () => {
-      showToast(t('offline.updateAvailable'));
-      // Optionally prompt reload; here we listen for click on toast isn't available,
-      // but user can manually reload to activate new version.
-      if (navigator.serviceWorker?.controller) {
-        navigator.serviceWorker.getRegistration().then((reg) => {
-          reg?.waiting?.postMessage?.({ type: 'SKIP_WAITING' });
-        });
-      }
-    };
-    const onUpdated = () => {
-      showToast(t('offline.updated'));
-    };
-    window.addEventListener('sw:update-available', onUpdate);
-    window.addEventListener('sw:updated', onUpdated);
-    return () => {
-      window.removeEventListener('sw:update-available', onUpdate);
-      window.removeEventListener('sw:updated', onUpdated);
-    };
-  }, [showToast, t]);
-
-  // Online/offline toasts
-  React.useEffect(() => {
-    const onOnline = () => showToast(t('offline.onlineToast'));
-    const onOffline = () => showToast(t('offline.offlineToast'));
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-    };
-  }, [showToast, t]);
 
   const nextMode = theme === 'light' ? 'dark' : 'light';
 
@@ -100,7 +62,6 @@ export default function NavBar() {
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <OfflineIndicator />
           <NotificationsBell unreadCount={unread} onClick={() => window.dispatchEvent(new Event('openNotifications'))} ariaControls="notifications-center" />
 
           <label htmlFor="lang" className="sr-only">{t('nav.language')}</label>

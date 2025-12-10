@@ -1,6 +1,3 @@
-import { getAllBooks, getBook as dbGetBook, putBooks, putBook, getFavorites as dbGetFavorites, addFavorite as dbAddFavorite, removeFavorite as dbRemoveFavorite } from '../storage/db';
-import { initializeFavoritesMigration, isOnline, queueToggleFavorite, startAutoSync } from './sync';
-
 const envBase =
   process.env.REACT_APP_API_BASE ||
   process.env.REACT_APP_BACKEND_URL ||
@@ -28,7 +25,9 @@ async function apiFetch(path, options = {}) {
  * - title_translations: { en: '...', es: '...' }
  * - description_translations: { en: '...', es: '...' }
  */
-function mapBook(raw) {
+// PUBLIC_INTERFACE
+export function mapBook(raw) {
+  /** Map raw book to client-friendly structure with localization helpers. */
   const titleTranslations = raw.title_translations || raw.titleTranslations || {};
   const descriptionTranslations = raw.description_translations || raw.descriptionTranslations || {};
 
@@ -112,13 +111,13 @@ const mockBooksRaw = [
 const mockBooks = mockBooksRaw.map(mapBook);
 
 /**
- * Favorites adapter: IndexedDB source of truth, mirrored to localStorage for backward compatibility.
+ * Favorites: localStorage-only persistence.
  */
 const FAV_KEY = 'favorites';
 
 // PUBLIC_INTERFACE
 export function readFavorites() {
-  /** Return an array of favorite book IDs from IndexedDB (async not allowed in tests that import; provide sync mirror). */
+  /** Return an array of favorite book IDs from localStorage. */
   try {
     const raw = window.localStorage.getItem(FAV_KEY);
     if (!raw) return [];
@@ -130,39 +129,15 @@ export function readFavorites() {
   }
 }
 
-async function writeFavoritesMirrorFromDb() {
-  const all = await dbGetFavorites();
-  try {
-    window.localStorage.setItem(FAV_KEY, JSON.stringify(all));
-    window.dispatchEvent(new StorageEvent('storage', { key: FAV_KEY, newValue: JSON.stringify(all) }));
-  } catch {}
-}
-
 // PUBLIC_INTERFACE
 export function toggleFavorite(bookId) {
   /**
-   * Toggle a book in favorites.
-   * - If online (best-effort), enqueue action and optimistically update DB + mirror.
-   * - If offline, enqueue and update DB + mirror; will sync later.
-   * Returns updated list (from localStorage mirror).
+   * Toggle a book in favorites using localStorage only. Returns updated array.
    */
   const id = String(bookId);
   const current = readFavorites();
   const exists = current.includes(id);
-  const nextIsFav = !exists;
-
-  // enqueue for sync regardless of connectivity
-  queueToggleFavorite(id, nextIsFav).catch(() => {});
-
-  // update local DB immediately (optimistic)
-  (async () => {
-    if (nextIsFav) await dbAddFavorite(id);
-    else await dbRemoveFavorite(id);
-    await writeFavoritesMirrorFromDb();
-  })();
-
-  // optimistic mirror result
-  const next = nextIsFav ? [...current, id] : current.filter((x) => x !== id);
+  const next = exists ? current.filter((x) => x !== id) : [...current, id];
   try {
     window.localStorage.setItem(FAV_KEY, JSON.stringify(next));
     window.dispatchEvent(new StorageEvent('storage', { key: FAV_KEY, newValue: JSON.stringify(next) }));
@@ -362,43 +337,26 @@ async function tryRealOrMock(realCall, mock) {
   }
 }
 
-/**
- * When real call succeeds, persist to IndexedDB for offline.
- * On failure/offline, serve from IndexedDB before falling back to mock.
- */
 // PUBLIC_INTERFACE
 export async function getBooks() {
-  /** Fetch list of books; uses env-driven API when available, else mock with IndexedDB cache. */
+  /** Fetch list of books; uses env-driven API when available; no offline cache. */
   try {
     const data = await apiFetch('/books');
     const mapped = Array.isArray(data) ? data.map(mapBook) : [];
-    // Persist raw mapped objects
-    await putBooks(mapped);
     return mapped;
   } catch {
-    // offline or failure: try IndexedDB
-    const cached = await getAllBooks();
-    if (cached.length) return cached;
-    // fallback to mock and cache it for future
-    await putBooks(mockBooks);
+    // fallback to mock
     return mockBooks;
   }
 }
 
-/**
- * getBookById uses network-first, writes to cache, and falls back to DB or mock.
- */
 // PUBLIC_INTERFACE
 export async function getBookById(id) {
-  /** Fetch a single book by id; caches in IndexedDB and serves from cache when offline. */
+  /** Fetch a single book by id; no IndexedDB fallback. */
   try {
     const data = await apiFetch(`/books/${id}`);
-    const mapped = mapBook(data);
-    await putBook(mapped);
-    return mapped;
+    return mapBook(data);
   } catch {
-    const cached = await dbGetBook(id);
-    if (cached) return cached;
     return mockBooks.find((b) => String(b.id) === String(id)) || null;
   }
 }

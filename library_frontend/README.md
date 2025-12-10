@@ -13,7 +13,6 @@ React frontend for the Library app with a modern, responsive UI.
 - RTL direction support for RTL languages
 - Notifications Center with mock data and preferences (Due Dates, New Arrivals, Personalized)
 - Recommendations: Trending, Favorites-based, and Users-also-borrowed
-- Offline Mode: Service Worker caching, IndexedDB data cache, offline queue & background sync
 
 ## Getting Started
 - Install: `npm install`
@@ -47,56 +46,6 @@ Includes Trending, Favorites-based, and Users-also-borrowed flows. See `src/serv
 ## Notifications
 Mock notifications with Preferences are persisted in localStorage. See `src/components/NotificationsCenter.js`.
 
-## Offline Mode
-
-### Overview
-The app supports offline-first browsing:
-- Service Worker (public/service-worker.js) precaches the app shell and caches runtime requests:
-  - Cache-first for static JS/CSS and images.
-  - Network-first with fallback for API JSON (e.g., `/api/books`, `/api/books/:id`, recommendations).
-- IndexedDB (src/storage/db.js) stores:
-  - `books` — cached book list and details
-  - `favorites` — favorite IDs
-  - `pendingActions` — offline actions queue
-  - `metadata` — misc metadata (e.g., migration flags)
-
-### Data Flow
-- On successful API fetches, book data is persisted to IndexedDB for offline reuse.
-- When offline (or network fails):
-  - `getBooks()` and `getBookById()` serve from IndexedDB if available, else fall back to mock data.
-- Favorites:
-  - Migrated from localStorage to IndexedDB on first run (mirror kept for backward compatibility).
-  - Toggling favorites enqueues an action when offline; UI updates optimistically and syncs later.
-
-### Offline Queue & Sync
-- `src/services/sync.js` manages:
-  - Online/offline detection (navigator.onLine + events).
-  - `queueToggleFavorite` to record user actions with timestamps and idempotency keys.
-  - `flushQueue` to replay queued actions when online.
-  - If a backend is configured (`REACT_APP_API_BASE` present), it will call a sample `/favorites/toggle` endpoint (idempotent writes recommended).
-  - If no backend is configured, local state (IndexedDB) remains the source of truth and actions are considered synced locally.
-- Auto sync starts on app load and flushes on reconnect. A toast “All changes synced” is shown after a successful flush.
-
-### UI & UX
-- NavBar shows an inline Online/Offline dot indicator with tooltips and ARIA labels.
-- Toasts:
-  - “You are offline. Changes will sync when you’re back online.”
-  - “Back online. Attempting to sync changes…”
-  - “All changes synced”
-  - SW update availability notifications.
-
-### Service Worker updates
-- On a new version, a toast informs the user that a reload is available.
-- On reload, SW controllerchange displays “App updated”.
-
-### Develop & Test Offline
-- Start the app: `npm start`
-- Open DevTools → Network → toggle “Offline”.
-- The app shell and last-fetched books remain available.
-- Toggling a favorite offline will queue the change; go back online to trigger sync.
-- To simulate a backend, set `REACT_APP_API_BASE` to your server. Favorites endpoint should be idempotent:
-  - POST `/favorites/toggle` body: `{ id: "bookId", favorite: true|false }` → `{ ok: true }`
-
 ## Accessibility
 - Modal dialogs: role="dialog", Escape to close.
 - Buttons with ARIA labels.
@@ -105,10 +54,9 @@ The app supports offline-first browsing:
 ## Project Structure
 - `src/components` — UI components
 - `src/pages` — pages
-- `src/services` — API and sync services
-- `src/storage` — IndexedDB wrapper
-- `public/service-worker.js` — Service Worker
+- `src/services` — API services
+- `src/i18n` — i18n initialization
 
 ## Where to Extend
 - Replace mock recommendation algorithms with backend endpoints.
-- Extend background sync to handle additional actions (e.g., mark notifications read on backend).
+- Integrate real notifications backed by server APIs.

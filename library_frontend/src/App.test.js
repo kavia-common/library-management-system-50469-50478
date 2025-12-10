@@ -43,13 +43,3 @@ test('i18n strings resolve for recommendations', async () => {
   const str = await screen.findByText(/Popular this week|Popular esta semana/i);
   expect(str).toBeInTheDocument();
 });
-
-// offline banner behavior: simulate offline/online events and ensure toasts container renders
-test('shows offline/online toasts events', async () => {
-  render(<App />);
-  // simulate offline event
-  window.dispatchEvent(new Event('offline'));
-  // toast container exists
-  const container = await screen.findByRole('status');
-  expect(container).toBeInTheDocument();
-});
