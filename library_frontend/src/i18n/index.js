@@ -66,4 +66,9 @@ i18n.on('languageChanged', (lng) => {
 // Apply initial direction
 applyDirection(i18n.language || 'en');
 
+// expose for simple access in non-hook contexts
+if (typeof window !== 'undefined') {
+  window.__i18n = i18n;
+}
+
 export default i18n;

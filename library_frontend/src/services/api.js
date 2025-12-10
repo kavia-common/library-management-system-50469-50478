@@ -1,3 +1,6 @@
+import { getAllBooks, getBook as dbGetBook, putBooks, putBook, getFavorites as dbGetFavorites, addFavorite as dbAddFavorite, removeFavorite as dbRemoveFavorite } from '../storage/db';
+import { initializeFavoritesMigration, isOnline, queueToggleFavorite, startAutoSync } from './sync';
+
 const envBase =
   process.env.REACT_APP_API_BASE ||
   process.env.REACT_APP_BACKEND_URL ||
@@ -108,12 +111,14 @@ const mockBooksRaw = [
 
 const mockBooks = mockBooksRaw.map(mapBook);
 
-// ----------------------- Favorites (local) -----------------------
+/**
+ * Favorites adapter: IndexedDB source of truth, mirrored to localStorage for backward compatibility.
+ */
 const FAV_KEY = 'favorites';
 
 // PUBLIC_INTERFACE
 export function readFavorites() {
-  /** Return an array of favorite book IDs from localStorage. */
+  /** Return an array of favorite book IDs from IndexedDB (async not allowed in tests that import; provide sync mirror). */
   try {
     const raw = window.localStorage.getItem(FAV_KEY);
     if (!raw) return [];
@@ -124,28 +129,44 @@ export function readFavorites() {
     return [];
   }
 }
-function writeFavorites(arr) {
+
+async function writeFavoritesMirrorFromDb() {
+  const all = await dbGetFavorites();
   try {
-    window.localStorage.setItem(FAV_KEY, JSON.stringify(arr.map(String)));
-  } catch {
-    // ignore
-  }
+    window.localStorage.setItem(FAV_KEY, JSON.stringify(all));
+    window.dispatchEvent(new StorageEvent('storage', { key: FAV_KEY, newValue: JSON.stringify(all) }));
+  } catch {}
 }
 
 // PUBLIC_INTERFACE
 export function toggleFavorite(bookId) {
-  /** Toggle a book in favorites and persist to localStorage. Returns updated list. */
+  /**
+   * Toggle a book in favorites.
+   * - If online (best-effort), enqueue action and optimistically update DB + mirror.
+   * - If offline, enqueue and update DB + mirror; will sync later.
+   * Returns updated list (from localStorage mirror).
+   */
   const id = String(bookId);
   const current = readFavorites();
   const exists = current.includes(id);
-  const next = exists ? current.filter((x) => x !== id) : [...current, id];
-  writeFavorites(next);
-  // emit storage event for same-tab listeners
+  const nextIsFav = !exists;
+
+  // enqueue for sync regardless of connectivity
+  queueToggleFavorite(id, nextIsFav).catch(() => {});
+
+  // update local DB immediately (optimistic)
+  (async () => {
+    if (nextIsFav) await dbAddFavorite(id);
+    else await dbRemoveFavorite(id);
+    await writeFavoritesMirrorFromDb();
+  })();
+
+  // optimistic mirror result
+  const next = nextIsFav ? [...current, id] : current.filter((x) => x !== id);
   try {
+    window.localStorage.setItem(FAV_KEY, JSON.stringify(next));
     window.dispatchEvent(new StorageEvent('storage', { key: FAV_KEY, newValue: JSON.stringify(next) }));
-  } catch {
-    // best-effort
-  }
+  } catch {}
   return next;
 }
 
@@ -341,21 +362,45 @@ async function tryRealOrMock(realCall, mock) {
   }
 }
 
+/**
+ * When real call succeeds, persist to IndexedDB for offline.
+ * On failure/offline, serve from IndexedDB before falling back to mock.
+ */
 // PUBLIC_INTERFACE
 export async function getBooks() {
-  /** Fetch list of books; uses env-driven API when available, else mock. */
-  return tryRealOrMock(
-    () => apiFetch('/books'),
-    mockBooks
-  );
+  /** Fetch list of books; uses env-driven API when available, else mock with IndexedDB cache. */
+  try {
+    const data = await apiFetch('/books');
+    const mapped = Array.isArray(data) ? data.map(mapBook) : [];
+    // Persist raw mapped objects
+    await putBooks(mapped);
+    return mapped;
+  } catch {
+    // offline or failure: try IndexedDB
+    const cached = await getAllBooks();
+    if (cached.length) return cached;
+    // fallback to mock and cache it for future
+    await putBooks(mockBooks);
+    return mockBooks;
+  }
 }
 
+/**
+ * getBookById uses network-first, writes to cache, and falls back to DB or mock.
+ */
 // PUBLIC_INTERFACE
 export async function getBookById(id) {
-  /** Fetch a single book by id; env API or mock. */
-  const real = () => apiFetch(`/books/${id}`);
-  const mock = mockBooks.find((b) => String(b.id) === String(id));
-  return tryRealOrMock(real, mock);
+  /** Fetch a single book by id; caches in IndexedDB and serves from cache when offline. */
+  try {
+    const data = await apiFetch(`/books/${id}`);
+    const mapped = mapBook(data);
+    await putBook(mapped);
+    return mapped;
+  } catch {
+    const cached = await dbGetBook(id);
+    if (cached) return cached;
+    return mockBooks.find((b) => String(b.id) === String(id)) || null;
+  }
 }
 
 // ----------------------- Recommendation Services -----------------------

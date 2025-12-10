@@ -114,5 +114,14 @@
   },
   "common": {
     "and": "and"
+  },
+  "offline": {
+    "online": "Online",
+    "offline": "Offline",
+    "offlineToast": "You are offline. Changes will sync when you’re back online.",
+    "onlineToast": "Back online. Attempting to sync changes…",
+    "synced": "All changes synced",
+    "updateAvailable": "A new version is available. Reload to update.",
+    "updated": "App updated. You’re on the latest version."
   }
 }

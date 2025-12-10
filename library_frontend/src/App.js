@@ -34,6 +34,18 @@ function AppShell() {
     setOpenCenter(false);
   };
 
+  const { useToast } = require('./components/ToastContext');
+  const { t } = require('react-i18next').useTranslation();
+  const { showToast } = useToast();
+
+  React.useEffect(() => {
+    const handler = () => {
+      showToast(t('offline.synced'));
+    };
+    window.addEventListener('sync:flushed', handler);
+    return () => window.removeEventListener('sync:flushed', handler);
+  }, [showToast, t]);
+
   return (
     <>
       <NavBar />

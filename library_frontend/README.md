@@ -13,6 +13,7 @@ React frontend for the Library app with a modern, responsive UI.
 - RTL direction support for RTL languages
 - Notifications Center with mock data and preferences (Due Dates, New Arrivals, Personalized)
 - Recommendations: Trending, Favorites-based, and Users-also-borrowed
+- Offline Mode: Service Worker caching, IndexedDB data cache, offline queue & background sync
 
 ## Getting Started
 - Install: `npm install`
@@ -27,7 +28,7 @@ This app reads the base URL for the backend from the following variables (first 
 
 If none are set, it defaults to relative `/api`.
 
-Optional variables you might set (already available in environment list):
+Optional variables you might set:
 - `REACT_APP_FRONTEND_URL`
 - `REACT_APP_WS_URL`
 - `REACT_APP_NODE_ENV`, `REACT_APP_ENABLE_SOURCE_MAPS`, `REACT_APP_PORT`, etc.
@@ -38,151 +39,76 @@ REACT_APP_API_BASE=https://your-backend.example.com
 ```
 
 ## Internationalization (i18n)
-We use `i18next` + `react-i18next` with a default language `en` and `es` as an example.
-
-- Initialization: `src/i18n/index.js`
-- Translation resources:
-  - `src/locales/en/translation.json`
-  - `src/locales/es/translation.json`
-- Language switching is available in the NavBar via a select input. The choice is persisted to `localStorage` using the `i18nextLng` key.
-- RTL support: for RTL languages (e.g., `ar`, `he`, `fa`, `ur`), the document `dir` attribute is set to `rtl` automatically.
-
-### Adding a New Language
-1. Create a new resource file, e.g. `src/locales/fr/translation.json` with the same keys as existing translations.
-2. Register it in `src/i18n/index.js`:
-   ```
-   import fr from '../locales/fr/translation.json';
-   // ...
-   resources: {
-     en: { translation: en },
-     es: { translation: es },
-     fr: { translation: fr }
-   }
-   ```
-3. Add the language option to the select in `src/components/NavBar.js`.
-4. If the language is RTL, add its code to the `RTL_LANGS` set in `src/i18n/index.js`.
-
-### Adding New Translation Keys
-- Add the new key to all translation files in `src/locales/<lang>/translation.json`.
-- Use it in components via `const { t } = useTranslation();` and `t('your.key')`.
-
-### Localized Book Data from Backend
-Backend responses may include localized fields:
-- `title_translations`: `{ "en": "Title", "es": "Título" }`
-- `description_translations`: `{ "en": "Description", "es": "Descripción" }`
-
-The frontend maps these into locale-aware getters in `src/services/api.js`:
-- `book.titleFor(lang)` -> returns localized title with fallback to default `book.title`
-- `book.descriptionFor(lang)` -> returns localized description with fallback to `book.description`
-
-Your backend can populate these fields for supported languages. If they’re missing, the UI gracefully falls back to the default fields.
-
-#### Example backend book object
-```
-{
-  "id": "1",
-  "title": "The Ocean Between Us",
-  "author": "Sarah Daniels",
-  "year": 2021,
-  "isbn": "9781234567890",
-  "tags": ["Fiction", "Drama"],
-  "description": "A moving tale...",
-  "title_translations": { "es": "El Océano Entre Nosotros" },
-  "description_translations": { "es": "Un relato conmovedor..." }
-}
-```
+We use `i18next` + `react-i18next` with a default language `en` and `es` as an example. See `src/i18n/index.js` for initialization. Translation keys live in `src/locales/<lang>/translation.json`.
 
 ## Recommendations
-
-### Overview
-The app includes a Recommendations system with:
-- Trending: Most popular books this week
-- Favorites-based: Suggestions based on your saved favorites (tags/authors similarity)
-- Users also borrowed: Contextual recommendations on the Book Details page
-
-### UI & Integration
-- Home page: shows "Trending" and "Because you liked these" (when favorites exist)
-- Book Details page: shows a "Users also borrowed" horizontal row
-- Accessible horizontal lists with keyboard left/right navigation, focus-visible styles, and reduced-motion support
-
-### Persistence
-- Favorites stored at `localStorage["favorites"]`
-- Toggle favorite from any card via the heart button
-
-### Backend Contract (suggested)
-Implement these endpoints to replace mock logic and set `REACT_APP_API_BASE`:
-- GET `/recommendations/trending` -> `[Book]`
-- GET `/recommendations/by-favorites?userId=XYZ` -> `[Book]`
-- GET `/recommendations/also-borrowed/:bookId` -> `[Book]`
-- POST `/recommendations/personalized` body: `{ profile: {...} }` -> `[Book]`
-
-Book object shape is consistent with Books APIs and supports optional localized fields (`title_translations`, `description_translations`).
-
-### Swapping to Real Endpoints
-The service functions in `src/services/api.js` will first try the backend via `apiFetch`. On failure, they fall back to mocks. Provide your backend, set `REACT_APP_API_BASE`, and ensure endpoints return arrays of books (or a single book where applicable).
+Includes Trending, Favorites-based, and Users-also-borrowed flows. See `src/services/api.js`.
 
 ## Notifications
+Mock notifications with Preferences are persisted in localStorage. See `src/components/NotificationsCenter.js`.
+
+## Offline Mode
 
 ### Overview
-The app includes a Notifications Center with:
-- Types: due_date, new_arrival, personalized
-- Read/unread state and timestamps
-- Actions: View Book, Snooze, Mark as Read, Mark All as Read
-- Preferences: enable/disable categories, frequency (immediate/daily), default snooze duration
+The app supports offline-first browsing:
+- Service Worker (public/service-worker.js) precaches the app shell and caches runtime requests:
+  - Cache-first for static JS/CSS and images.
+  - Network-first with fallback for API JSON (e.g., `/api/books`, `/api/books/:id`, recommendations).
+- IndexedDB (src/storage/db.js) stores:
+  - `books` — cached book list and details
+  - `favorites` — favorite IDs
+  - `pendingActions` — offline actions queue
+  - `metadata` — misc metadata (e.g., migration flags)
 
-A client-side scheduler (every 60s) synthesizes due date reminders from mock loans.
+### Data Flow
+- On successful API fetches, book data is persisted to IndexedDB for offline reuse.
+- When offline (or network fails):
+  - `getBooks()` and `getBookById()` serve from IndexedDB if available, else fall back to mock data.
+- Favorites:
+  - Migrated from localStorage to IndexedDB on first run (mirror kept for backward compatibility).
+  - Toggling favorites enqueues an action when offline; UI updates optimistically and syncs later.
 
-### UI Components
-- `NotificationsBell` (in NavBar): shows unread count badge.
-- `NotificationsCenter` (modal): lists notifications with actions.
-- `PreferencesModal`: manage categories, frequency, snooze.
-- `ToastProvider`: transient feedback (e.g., "Marked as read").
+### Offline Queue & Sync
+- `src/services/sync.js` manages:
+  - Online/offline detection (navigator.onLine + events).
+  - `queueToggleFavorite` to record user actions with timestamps and idempotency keys.
+  - `flushQueue` to replay queued actions when online.
+  - If a backend is configured (`REACT_APP_API_BASE` present), it will call a sample `/favorites/toggle` endpoint (idempotent writes recommended).
+  - If no backend is configured, local state (IndexedDB) remains the source of truth and actions are considered synced locally.
+- Auto sync starts on app load and flushes on reconnect. A toast “All changes synced” is shown after a successful flush.
 
-### Persistence
-- Notifications stored at `localStorage["notifications.list"]`
-- Preferences stored at `localStorage["notifications.preferences"]`
+### UI & UX
+- NavBar shows an inline Online/Offline dot indicator with tooltips and ARIA labels.
+- Toasts:
+  - “You are offline. Changes will sync when you’re back online.”
+  - “Back online. Attempting to sync changes…”
+  - “All changes synced”
+  - SW update availability notifications.
 
-### Mock vs Backend
-Currently a mock service is provided in `src/services/api.js`. To integrate a real backend, implement these endpoints on your server and set `REACT_APP_API_BASE`:
+### Service Worker updates
+- On a new version, a toast informs the user that a reload is available.
+- On reload, SW controllerchange displays “App updated”.
 
-Expected API (suggested shapes):
-- GET `/notifications` -> `[ { id, type, timestamp, read, bookId?, bookTitle?, dueAt?, snoozedUntil? } ]`
-- POST `/notifications/:id/read` -> `{ ok: true }`
-- POST `/notifications/read-all` -> `{ ok: true }`
-- POST `/notifications/:id/snooze` body: `{ durationMinutes }` -> `{ ok: true, snoozedUntil }`
-- GET `/notification-preferences` -> `{ enableDueDate, enableNewArrival, enablePersonalized, frequency, defaultSnooze }`
-- PUT `/notification-preferences` body: same shape -> saved preferences
-
-The frontend is ready to switch to real endpoints by replacing the mock storage calls in `src/services/api.js` with `apiFetch` calls.
+### Develop & Test Offline
+- Start the app: `npm start`
+- Open DevTools → Network → toggle “Offline”.
+- The app shell and last-fetched books remain available.
+- Toggling a favorite offline will queue the change; go back online to trigger sync.
+- To simulate a backend, set `REACT_APP_API_BASE` to your server. Favorites endpoint should be idempotent:
+  - POST `/favorites/toggle` body: `{ id: "bookId", favorite: true|false }` → `{ ok: true }`
 
 ## Accessibility
-- Modal dialogs: `role="dialog"` and Escape to close.
+- Modal dialogs: role="dialog", Escape to close.
 - Buttons with ARIA labels.
 - Live region for toasts.
-- Keyboard reachable controls.
 
 ## Project Structure
-- `src/components` — NavBar, SearchBar, BookCard, BookGrid, BookDetailModal, NotificationsBell, NotificationsCenter, PreferencesModal, ToastContext, RecommendationCard, RecommendationRow, RecommendationsSection
-- `src/pages` — Home (search + grid + recommendations), BookDetails (route + also-borrowed)
-- `src/services/api.js` — API base and functions; books APIs, notifications, favorites, and recommendation services
-- `src/theme/ThemeContext.js` — Light/Dark theme toggle
-- `src/i18n/index.js` — i18n initialization (provider is loaded at `src/index.js`)
-- `src/locales/<lang>/translation.json` — Translation resources
-- `src/App.js` — Router and app shell
-
-## Styling
-Ocean Professional palette:
-- Primary: `#2563EB`
-- Secondary: `#F59E0B`
-- Error: `#EF4444`
-- Background: `#f9fafb`
-- Surface: `#ffffff`
-- Text: `#111827`
-
-Utilities live in `src/index.css`. Component-level styles are inline for simplicity but can be migrated to CSS modules if preferred.
+- `src/components` — UI components
+- `src/pages` — pages
+- `src/services` — API and sync services
+- `src/storage` — IndexedDB wrapper
+- `public/service-worker.js` — Service Worker
 
 ## Where to Extend
-- Add pagination or filters in `Home.js`
-- Add create/edit functionality and forms
-- Replace mock images with real cover URLs from API
-- Replace mock notifications and recommendations with backend polling, webhooks, or WebSockets
+- Replace mock recommendation algorithms with backend endpoints.
+- Extend background sync to handle additional actions (e.g., mark notifications read on backend).
