@@ -80,14 +80,23 @@ function ensureCreatedAt(items) {
   });
 }
 
+function ensureBorrowFields(items) {
+  // Make sure every book has borrowed:boolean and dueDate: string|null
+  return (items || []).map(b => {
+    const borrowed = typeof b.borrowed === 'boolean' ? b.borrowed : (typeof b.available === 'boolean' ? !b.available : false);
+    const dueDate = b.dueDate ? String(b.dueDate) : null;
+    return { ...b, borrowed, dueDate };
+  });
+}
+
 async function mockLoad() {
   const existing = lsRead();
-  if (Array.isArray(existing)) return ensureCreatedAt(withSimulatedBorrowed(existing));
+  if (Array.isArray(existing)) return ensureCreatedAt(ensureBorrowFields(existing));
   // seed from static mocks once
   const data = await import('../mocks/books.json');
   const items = data.default || data;
   // augment seeded data with simulated fields
-  const enhanced = ensureCreatedAt(withSimulatedBorrowed(items));
+  const enhanced = ensureCreatedAt(ensureBorrowFields(items));
   lsWrite(enhanced);
   return enhanced;
 }
@@ -172,6 +181,7 @@ export async function createBook(payload) {
     available: true,
     rating: 0,
     borrowed: false,
+    dueDate: null,
     createdAt: new Date().toISOString(),
     ...normalized,
   };
@@ -283,4 +293,115 @@ export async function getRecentBooks(limit = 5) {
     .slice()
     .sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   return sorted.slice(0, limit);
+}
+
+/**
+ * Borrowing helpers
+ */
+
+// PUBLIC_INTERFACE
+export async function borrowBook(bookId, { dueDate }) {
+  /**
+   * Borrow a book and set due date.
+   * API-first:
+   *  - POST /books/:id/borrow with body { dueDate }
+   *  - or PATCH /books/:id with { borrowed: true, dueDate }
+   * Fallback: update localStorage
+   */
+  const id = String(bookId);
+  const payload = { dueDate };
+  if (API_BASE) {
+    try {
+      const url = new URL(`/books/${encodeURIComponent(id)}/borrow`, API_BASE);
+      const data = await fetchJson(url.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return data;
+    } catch (e) {
+      // try PATCH fallback
+      try {
+        const url2 = new URL(`/books/${encodeURIComponent(id)}`, API_BASE);
+        const data = await fetchJson(url2.toString(), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ borrowed: true, dueDate }),
+        });
+        return data;
+      } catch (e2) {
+        console.warn('Borrow API failed; using localStorage fallback:', e2.message);
+      }
+    }
+  }
+  const items = await mockLoad();
+  const idx = items.findIndex(b => String(b.id) === id);
+  if (idx === -1) throw new Error('Book not found');
+  const updated = { ...items[idx], borrowed: true, available: false, dueDate: dueDate || null };
+  const next = items.slice();
+  next[idx] = updated;
+  lsWrite(next);
+  return updated;
+}
+
+// PUBLIC_INTERFACE
+export async function returnBook(bookId) {
+  /**
+   * Return a book (mark not borrowed and clear dueDate).
+   * API-first:
+   *  - POST /books/:id/return
+   *  - or PATCH /books/:id with { borrowed: false, dueDate: null }
+   * Fallback: update localStorage
+   */
+  const id = String(bookId);
+  if (API_BASE) {
+    try {
+      const url = new URL(`/books/${encodeURIComponent(id)}/return`, API_BASE);
+      const data = await fetchJson(url.toString(), { method: 'POST' });
+      return data;
+    } catch (e) {
+      try {
+        const url2 = new URL(`/books/${encodeURIComponent(id)}`, API_BASE);
+        const data = await fetchJson(url2.toString(), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ borrowed: false, dueDate: null }),
+        });
+        return data;
+      } catch (e2) {
+        console.warn('Return API failed; using localStorage fallback:', e2.message);
+      }
+    }
+  }
+  const items = await mockLoad();
+  const idx = items.findIndex(b => String(b.id) === id);
+  if (idx === -1) throw new Error('Book not found');
+  const updated = { ...items[idx], borrowed: false, available: true, dueDate: null };
+  const next = items.slice();
+  next[idx] = updated;
+  lsWrite(next);
+  return updated;
+}
+
+// PUBLIC_INTERFACE
+export function getDueSoonAndOverdue(books, daysThreshold = 3) {
+  /**
+   * Returns { dueSoon: Book[], overdue: Book[] } computed client-side from dueDate.
+   * Books are expected to contain { borrowed:boolean, dueDate?: ISO string|null }.
+   */
+  const now = Date.now();
+  const msThreshold = daysThreshold * 24 * 60 * 60 * 1000;
+  const dueSoon = [];
+  const overdue = [];
+  for (const b of books || []) {
+    if (!b.borrowed || !b.dueDate) continue;
+    const d = new Date(b.dueDate).getTime();
+    if (isNaN(d)) continue;
+    if (d < now) overdue.push(b);
+    else if (d - now <= msThreshold) dueSoon.push(b);
+  }
+  // sort: overdue earliest first; dueSoon soonest first
+  overdue.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  dueSoon.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  return { dueSoon, overdue };
 }

@@ -17,6 +17,18 @@ export default function BookCard({ book, onOpen, favoriteIds = [], onToggleFavor
   const isFav = favoriteIds.includes(String(book.id));
   const ratingValue = typeof averageRating === 'number' ? averageRating : (book.rating || 0);
 
+  const borrowed = !!book.borrowed || (book.available === false);
+  const due = book.dueDate ? new Date(book.dueDate) : null;
+  const dueText = due ? due.toLocaleDateString() : null;
+  const badgeStyle = {
+    background: borrowed ? 'var(--color-error)' : 'var(--color-success)',
+    color: '#fff',
+    padding: '2px 8px',
+    borderRadius: 999,
+    fontSize: 12,
+    boxShadow: 'var(--shadow-sm)',
+  };
+
   return (
     <article className="card" aria-labelledby={`title-${book.id}`}>
       <div style={{ position: 'relative' }}>
@@ -42,6 +54,12 @@ export default function BookCard({ book, onOpen, favoriteIds = [], onToggleFavor
         >
           {isFav ? '★' : '☆'}
         </button>
+
+        <div style={{ position: 'absolute', left: 10, top: 10 }}>
+          <span className="tag" style={badgeStyle}>
+            {borrowed ? 'Borrowed' : 'Available'}
+          </span>
+        </div>
       </div>
       <div className="card-body" onClick={() => onOpen(book)} style={{ cursor: 'pointer' }}>
         <h3 className="card-title" id={`title-${book.id}`}>{book.title}</h3>
@@ -56,11 +74,12 @@ export default function BookCard({ book, onOpen, favoriteIds = [], onToggleFavor
           {(book.genres || []).slice(0, 3).map((g, idx) => (
             <Tag key={idx}>{g}</Tag>
           ))}
+          {borrowed && dueText && <Tag>Due {dueText}</Tag>}
         </div>
       </div>
       <div className="card-actions">
         <span style={{ fontSize: 12, color: 'var(--color-text-subtle)' }}>
-          {book.available ? 'Available' : 'Checked out'}
+          {borrowed ? (dueText ? `Due ${dueText}` : 'Borrowed') : 'Available'}
         </span>
         <button
           className="btn"

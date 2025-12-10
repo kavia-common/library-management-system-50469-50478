@@ -7,6 +7,7 @@ This React app implements a clean, responsive Library Management UI featuring:
 - Book Management page (/manage) with Create, Update, Delete
 - Dashboard (/dashboard) with summary cards and recent additions
 - Favorites and Reviews with API-first behavior and localStorage fallback
+- Borrow/Return with due dates, reminders on Home and Dashboard
 - Env-aware data service (REACT_APP_API_BASE or REACT_APP_BACKEND_URL), with localStorage-backed mock fallback
 - Accessibility for modals/dialogs (ESC close, focus trap, alt text, labels and aria states)
 
@@ -21,26 +22,78 @@ Scripts:
 
 Design theme: Ocean Professional
 
+## Borrowing System
+
+Books include:
+- borrowed: boolean
+- dueDate: ISO string or null
+
+UI:
+- Book cards and details show a status badge (Available/Borrowed) and due date when borrowed.
+- Details modal provides:
+  - Borrow action with quick presets (1 week, 2 weeks, 30 days) and a date input for custom due date.
+  - Return action when a book is borrowed.
+  - Borrow is disabled when already borrowed.
+- Manage Books includes optional quick Borrow/Return row actions (quick borrow sets 2-week due date).
+
+Reminders:
+- Home shows two small cards:
+  - Due Soon (within 3 days)
+  - Overdue
+- Dashboard adds:
+  - Overdue count summary card
+  - "Upcoming Due Dates" list (top 5)
+These are computed client-side from borrowed/dueDate.
+
+### Backend expectations (API-first)
+
+When API is configured via REACT_APP_API_BASE or REACT_APP_BACKEND_URL, the app calls:
+
+- GET    {BASE}/books
+- POST   {BASE}/books
+- GET    {BASE}/books/:id
+- PUT    {BASE}/books/:id
+- DELETE {BASE}/books/:id
+- OPTIONAL: GET {BASE}/books/summary
+- OPTIONAL: GET {BASE}/books?sort=createdAt&limit=N
+
+Borrow/Return endpoints:
+- Preferred:
+  - POST {BASE}/books/:id/borrow
+    - body: { dueDate: "2025-01-31T23:59:59.000Z" }
+    - returns updated book
+  - POST {BASE}/books/:id/return
+    - returns updated book
+- Fallback (if above not available):
+  - PATCH {BASE}/books/:id with { borrowed: true, dueDate }
+  - PATCH {BASE}/books/:id with { borrowed: false, dueDate: null }
+
+Response shape:
+- For both borrow and return, server should return the updated book object including borrowed and dueDate.
+
+### Fallback (no API or API error)
+
+- Uses localStorage key `ocean-library-books`.
+- Seeded from src/mocks/books.json on first run.
+- Fields:
+  - createdAt: generated when missing
+  - borrowed: inferred from `available === false` when missing; default false
+  - dueDate: null by default
+- The borrow/return actions update localStorage accordingly.
+
 ## Dashboard
 
 Navigate to "Dashboard" from the top navbar or /dashboard.
 
 Shows:
 - Summary cards:
-  - Total Books (count of all books)
-  - Borrowed Books (books with `borrowed: true`; if not present, inferred from `available === false` or simulated as false in fallback)
+  - Total Books
+  - Borrowed Books
+  - Overdue (past due date)
+- Upcoming Due Dates:
+  - List of up to 5 borrowed books due within the next 3 days
 - Recent Additions:
-  - List of latest books sorted by `createdAt` (ISO timestamp), showing title, author, and formatted timestamp.
-
-Backend expectations (API-first):
-- GET {BASE}/books?sort=createdAt&limit=5 -> returns array (preferred) or { items: [] }
-- Optional: GET {BASE}/books/summary -> returns { total: number, borrowed: number }
-- Otherwise, the app will GET {BASE}/books and compute stats client-side.
-
-Fallback (no API):
-- Uses localStorage key `ocean-library-books` and derives:
-  - `createdAt`: generated when missing
-  - `borrowed`: inferred from `available === false`, otherwise simulated as `false`
+  - Latest books sorted by `createdAt` and their timestamps
 
 ## Book Management
 
@@ -50,6 +103,7 @@ Features:
 - Add new books (title, author, genre, year)
 - Edit existing books
 - Delete books with confirmation
+- Optional quick borrow/return per row
 - Client-side validation with accessible labels and error messages
 - Optimistic updates with automatic list refresh and error handling
 
@@ -89,28 +143,19 @@ Review data:
 
 ## Data Service (API-first with mock fallback)
 
-The service checks for an API base URL using the first non-empty of:
+The service checks for an API base URL using:
 - REACT_APP_API_BASE
 - REACT_APP_BACKEND_URL
 
-Book endpoints expected when API is configured:
-- GET    {BASE}/books
-- POST   {BASE}/books
-- GET    {BASE}/books/:id
-- PUT    {BASE}/books/:id
-- DELETE {BASE}/books/:id
-- OPTIONAL: GET {BASE}/books/summary
-- OPTIONAL: GET {BASE}/books?sort=createdAt&limit=N
-
-When API is not configured or a request fails, the app falls back to mock data persisted in localStorage:
+When API is not configured or a request fails, the app falls back to localStorage:
 - Key: ocean-library-books
 - Initially seeded from src/mocks/books.json
-- createBook, updateBook, deleteBook persist to localStorage
-- createdAt and borrowed are inferred/simulated if missing
+- createBook, updateBook, deleteBook, borrowBook, returnBook persist to localStorage
+- createdAt, borrowed, dueDate normalized when missing
 
 Form payloads:
 - { title, author, genre, year }
-The service normalizes this to the internal structure (genres array).
+The service normalizes genre(s) to an array.
 
 ## Accessibility
 

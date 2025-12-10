@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { listBooks, createBook, updateBook, deleteBook } from '../services/books';
+import { listBooks, createBook, updateBook, deleteBook, borrowBook, returnBook } from '../services/books';
 import { EmptyState } from '../components/States';
 import BookForm from '../components/management/BookForm';
 import ConfirmDialog from '../components/management/ConfirmDialog';
@@ -167,9 +167,39 @@ export default function ManageBooks() {
                   <td style={tdStyle}>{(b.genres || []).join(', ')}</td>
                   <td style={tdStyle}>{b.year || '—'}</td>
                   <td style={{ ...tdStyle }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <button className="btn" style={{ background: 'var(--color-muted)', color: 'var(--color-text)' }} onClick={() => onEdit(b)} aria-label={`Edit ${b.title}`}>Edit</button>
                       <button className="btn" style={{ background: 'var(--color-error)' }} onClick={() => onDelete(b)} aria-label={`Delete ${b.title}`}>Delete</button>
+                      {/* Optional quick borrow/return */}
+                      {(!b.borrowed && b.available !== false) ? (
+                        <button
+                          className="btn"
+                          onClick={async () => {
+                            // quick borrow 14 days
+                            const dt = new Date(); dt.setDate(dt.getDate() + 14);
+                            const due = dt.toISOString();
+                            // optimistic
+                            setBooks(cur => cur.map(x => String(x.id) === String(b.id) ? { ...x, borrowed: true, available: false, dueDate: due } : x));
+                            try { await borrowBook(b.id, { dueDate: due }); } catch { await refresh(); }
+                          }}
+                          title="Quick borrow (2 weeks)"
+                        >
+                          Borrow
+                        </button>
+                      ) : (
+                        <button
+                          className="btn"
+                          style={{ background: 'var(--color-muted)', color: 'var(--color-text)' }}
+                          onClick={async () => {
+                            // optimistic
+                            setBooks(cur => cur.map(x => String(x.id) === String(b.id) ? { ...x, borrowed: false, available: true, dueDate: null } : x));
+                            try { await returnBook(b.id); } catch { await refresh(); }
+                          }}
+                          title="Return book"
+                        >
+                          Return
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

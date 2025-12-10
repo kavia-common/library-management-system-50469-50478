@@ -3,7 +3,7 @@ import SearchBar from '../components/SearchBar';
 import BookGrid from '../components/BookGrid';
 import { EmptyState, LoadingSkeleton } from '../components/States';
 import BookDetailsModal from '../components/BookDetailsModal';
-import { listBooks } from '../services/books';
+import { listBooks, getDueSoonAndOverdue } from '../services/books';
 import { getFavorites, toggleFavorite } from '../services/favorites';
 import { getReviews } from '../services/reviews';
 import useNavigateToBook from '../hooks/useNavigateToBook';
@@ -94,6 +94,8 @@ export default function Home() {
     });
   }, [allBooks, query, favoriteIds, showOnlyFavorites]);
 
+  const reminders = useMemo(() => getDueSoonAndOverdue(allBooks, 3), [allBooks]);
+
   const onToggleFavorite = async (id) => {
     try {
       const next = await toggleFavorite(id);
@@ -102,6 +104,33 @@ export default function Home() {
       console.warn('Toggle favorite failed:', e.message);
     }
   };
+
+  const reminderCard = (title, list, tone) => (
+    <div className="card" style={{ padding: 12, borderColor: tone === 'danger' ? 'var(--color-error)' : 'var(--color-secondary)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <strong style={{ fontSize: 14 }}>
+          {title}
+        </strong>
+        <span className="tag" style={{ background: tone === 'danger' ? 'var(--color-error)' : 'var(--color-secondary)', color: '#fff' }}>
+          {list.length}
+        </span>
+      </div>
+      {list.length === 0 && <div className="empty" style={{ padding: 12 }}>No items</div>}
+      {list.length > 0 && (
+        <div style={{ display: 'grid', gap: 6 }}>
+          {list.slice(0, 5).map(b => (
+            <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontWeight: 600 }}>{b.title}</span>
+                <span style={{ color: 'var(--color-text-subtle)', marginLeft: 6 }}>by {b.author || 'Unknown'}</span>
+              </div>
+              <span className="tag">{b.dueDate ? new Date(b.dueDate).toLocaleDateString() : '—'}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="container" style={{ paddingTop: 20, paddingBottom: 40 }}>
@@ -119,6 +148,14 @@ export default function Home() {
           </button>
         </div>
       </div>
+
+      {/* Reminders surface */}
+      {!loading && !err && (
+        <div className="grid" style={{ marginBottom: 16 }}>
+          {reminderCard('Due Soon (next 3 days)', reminders.dueSoon, 'warn')}
+          {reminderCard('Overdue', reminders.overdue, 'danger')}
+        </div>
+      )}
 
       {loading && <LoadingSkeleton count={8} />}
 
