@@ -16,6 +16,7 @@ React frontend for the Library app with a modern, responsive UI.
 - Recommendations: Trending, Favorites-based, and Users-also-borrowed
 - Gamification: Achievements, daily streaks, and leaderboard (with mock localStorage fallback)
 - Events & Activities: Calendar/list, event details with RSVP/reminders, and Reading Challenges
+- Tags & Genres taxonomy: manage genres/tags, tag books, and filter grid
 
 ## Getting Started
 - Install: `npm install`
@@ -43,6 +44,46 @@ REACT_APP_API_BASE=https://your-backend.example.com
 
 ## Internationalization (i18n)
 We use `i18next` + `react-i18next` with a default language `en` and `es` as an example. See `src/i18n/index.js` for initialization. Translation keys live in `src/locales/<lang>/translation.json`.
+
+## Tags & Genres (Taxonomy)
+
+This frontend supports customizable Tags and Genres for improved organization and discovery.
+
+Features:
+- Staff management UI (Staff → Taxonomy) for CRUD on Tags and Genres.
+- Book-level tagging via a Tagging Panel in Book Details (visible to staff with manage_inventory; available in mock mode).
+- Home FiltersBar for multi-select filtering by tags and genres.
+- i18n support (en/es) for all labels and messages.
+
+Dual mode:
+- Real API mode: when `REACT_APP_API_BASE` is defined, requests are sent to:
+  - `GET /taxonomy/genres?q=...`
+  - `POST /taxonomy/genres` { name, description?, color? }
+  - `PUT /taxonomy/genres/:id`
+  - `DELETE /taxonomy/genres/:id`
+  - `GET /taxonomy/tags?q=...`
+  - `POST /taxonomy/tags`
+  - `PUT /taxonomy/tags/:id`
+  - `DELETE /taxonomy/tags/:id`
+  - `GET /books/:id/taxonomy`
+  - `PUT /books/:id/taxonomy` { tags: [tagId], genres: [genreId] }
+
+- Mock mode: when `REACT_APP_API_BASE` is not set, the app uses localStorage:
+  - Keys: `taxonomy:genres`, `taxonomy:tags`, `taxonomy:bookIndex`.
+  - Seeds: Genres (Fiction, Non-Fiction, Mystery, Sci-Fi) and Tags (Award-winning, Classic, New).
+  - IDs are stable for seeds and UUID for new items.
+  - `services/api.getBooks()` merges taxonomy assignments so filters work uniformly in both modes.
+
+Validation:
+- Name is required and must be unique (case-insensitive) within its type.
+
+Accessibility & Styling:
+- Ocean Professional theme: subtle shadows, rounded corners, focus-visible outlines.
+- Modals and lists include ARIA attributes and keyboard-accessible controls.
+
+Example payloads:
+- Create Tag: `{ "name": "Bestseller", "description": "Top selling books", "color": "#F59E0B" }`
+- Assign to book: `{ "tags": ["tag_award"], "genres": ["genre_scifi"] }`
 
 ## Recommendations
 Includes Trending, Favorites-based, and Users-also-borrowed flows. See `src/services/api.js`.
@@ -163,21 +204,22 @@ Routes:
 - /staff/roles — Role definitions and permissions toggles
 - /staff/activity — Recent activity
 - /staff/login — Mock login to choose role when no backend
+- /staff/taxonomy — Manage Tags & Genres (new)
 
 Auth & RBAC:
 - src/context/AuthContext.js provides currentUser, hasRole(), hasPermission(), loginAsRole() for mock.
 
-Suggested Backend Contracts:
-- GET /staff/libraries?q=&page=&pageSize=
-  -> { items: [{ id, name, address, hours, createdAt }], total, page, pageSize }
-- POST /staff/libraries { name, address, hours } -> created library
-- PUT /staff/libraries/:id { name?, address?, hours? } -> updated
-- DELETE /staff/libraries/:id -> { success: true }
-- GET /staff/users -> [{ id, name, email, roles:[], permissions:[] }]
-- PUT /staff/users/:id/roles { roles:[] } -> updated user
-- GET /staff/roles -> { ROLE: [permissions...] }
-- PUT /staff/roles/:role { permissions:[] } -> updated roles map
-- GET /staff/activity -> [{ id, actor, action, meta?, timestamp }]
+Suggested Backend Contracts for Taxonomy:
+- GET /taxonomy/genres?q=
+- POST /taxonomy/genres
+- PUT /taxonomy/genres/:id
+- DELETE /taxonomy/genres/:id
+- GET /taxonomy/tags?q=
+- POST /taxonomy/tags
+- PUT /taxonomy/tags/:id
+- DELETE /taxonomy/tags/:id
+- GET /books/:id/taxonomy
+- PUT /books/:id/taxonomy
 
 Styling & Theme:
 - Ocean Professional styling with keyboard-friendly controls, ARIA labels for tables and dialogs.
@@ -185,3 +227,4 @@ Styling & Theme:
 Tests:
 - Staff protected route behavior and CRUD in mock store
 - Events: calendar render, RSVP updates, reminders, challenges progress, i18n keys resolve
+- Taxonomy: CRUD via mock service, book tagging flows update UI, filters reduce grid results

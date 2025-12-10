@@ -1,3 +1,5 @@
+import taxonomyService, { isMockMode } from './taxonomy';
+
 const envBase =
   process.env.REACT_APP_API_BASE ||
   process.env.REACT_APP_BACKEND_URL ||
@@ -7,6 +9,7 @@ const envBase =
  * Resolve API base from env; default to relative "/api" if not set.
  * PUBLIC_INTERFACE
  */
+// PUBLIC_INTERFACE
 export function getApiBase() {
   return envBase || '/api';
 }
@@ -45,6 +48,7 @@ export function mapBook(raw) {
     tags: raw.tags || [],
     description: raw.description,
     coverUrl: raw.coverUrl,
+    taxonomy: raw.taxonomy || raw.taxonomy || undefined,
     // PUBLIC_INTERFACE
     titleFor(lang = 'en') {
       /** Return localized title by lang, fallback to default title. */
@@ -326,7 +330,71 @@ function startScheduler() {
 startScheduler();
 
 // --------------------------------------------------------------------
-// Existing book APIs with mock fallback
+// Existing book APIs with mock fallback + taxonomy integration
+
+// PUBLIC_INTERFACE
+export async function getBooks(filters = {}) {
+  /** Fetch list of books; uses env-driven API when available. In mock mode merge taxonomy and apply filters. */
+  if (!process.env.REACT_APP_API_BASE) {
+    // Use mockBooks + taxonomy
+    const withTax = await Promise.all(
+      mockBooks.map(async (b) => {
+        const tx = await taxonomyService.getBookTags(b.id);
+        return { ...b, taxonomy: tx };
+        // mapBook already applied
+      })
+    );
+    const { tags = [], genres = [] } = filters || {};
+    const tagSet = new Set(tags);
+    const genreSet = new Set(genres);
+    return withTax.filter((b) => {
+      const bTags = new Set(b?.taxonomy?.tags || []);
+      const bGenres = new Set(b?.taxonomy?.genres || []);
+      const tagsOk = tagSet.size === 0 || Array.from(tagSet).every((t) => bTags.has(t));
+      const genresOk = genreSet.size === 0 || Array.from(genreSet).every((g) => bGenres.has(g));
+      return tagsOk && genresOk;
+    });
+  }
+  const qs = new URLSearchParams();
+  if (filters?.tags?.length) qs.append('tags', filters.tags.join(','));
+  if (filters?.genres?.length) qs.append('genres', filters.genres.join(','));
+  try {
+    const data = await apiFetch(`/books${qs.toString() ? `?${qs.toString()}` : ''}`);
+    const mapped = Array.isArray(data) ? data.map(mapBook) : [];
+    return mapped;
+  } catch {
+    // fallback to mock if backend unreachable
+    return mockBooks;
+  }
+}
+
+// PUBLIC_INTERFACE
+export async function getBookById(id) {
+  /** Fetch a single book by id; merges taxonomy in mock mode or if backend endpoint exists. */
+  if (!process.env.REACT_APP_API_BASE) {
+    const book = mockBooks.find((b) => String(b.id) === String(id)) || null;
+    if (!book) return null;
+    const taxonomy = await taxonomyService.getBookTags(id);
+    return { ...book, taxonomy };
+  }
+  try {
+    const data = await apiFetch(`/books/${id}`);
+    let mapped = mapBook(data);
+    try {
+      if (!mapped.taxonomy && !isMockMode()) {
+        const tx = await taxonomyService.getBookTags(id);
+        mapped = { ...mapped, taxonomy: tx };
+      }
+    } catch {
+      // ignore if taxonomy endpoint not implemented
+    }
+    return mapped;
+  } catch {
+    return mockBooks.find((b) => String(b.id) === String(id)) || null;
+  }
+}
+
+// ----------------------- Recommendation Services -----------------------
 async function tryRealOrMock(realCall, mock) {
   try {
     const data = await realCall();
@@ -338,32 +406,6 @@ async function tryRealOrMock(realCall, mock) {
     return mock;
   }
 }
-
-// PUBLIC_INTERFACE
-export async function getBooks() {
-  /** Fetch list of books; uses env-driven API when available; no offline cache. */
-  try {
-    const data = await apiFetch('/books');
-    const mapped = Array.isArray(data) ? data.map(mapBook) : [];
-    return mapped;
-  } catch {
-    // fallback to mock
-    return mockBooks;
-  }
-}
-
-// PUBLIC_INTERFACE
-export async function getBookById(id) {
-  /** Fetch a single book by id; no IndexedDB fallback. */
-  try {
-    const data = await apiFetch(`/books/${id}`);
-    return mapBook(data);
-  } catch {
-    return mockBooks.find((b) => String(b.id) === String(id)) || null;
-  }
-}
-
-// ----------------------- Recommendation Services -----------------------
 
 // PUBLIC_INTERFACE
 export async function getTrendingBooks() {
@@ -394,24 +436,26 @@ export async function getRecommendationsByFavorites(userId = null) {
    */
   const real = () => apiFetch(userId ? `/recommendations/by-favorites?userId=${encodeURIComponent(userId)}` : '/recommendations/by-favorites');
   const favs = readFavorites();
-  if (!favs.length) return [];
-  const favSet = new Set(favs);
-  const favoriteBooks = mockBooks.filter((b) => favSet.has(String(b.id)));
-  const tagFreq = new Map();
-  const authorFreq = new Map();
-  for (const b of favoriteBooks) {
-    (b.tags || []).forEach((t) => tagFreq.set(t, (tagFreq.get(t) || 0) + 1));
-    if (b.author) authorFreq.set(b.author, (authorFreq.get(b.author) || 0) + 2);
+  if (favs.length) {
+    const favSet = new Set(favs);
+    const favoriteBooks = mockBooks.filter((b) => favSet.has(String(b.id)));
+    const tagFreq = new Map();
+    const authorFreq = new Map();
+    for (const b of favoriteBooks) {
+      (b.tags || []).forEach((t) => tagFreq.set(t, (tagFreq.get(t) || 0) + 1));
+      if (b.author) authorFreq.set(b.author, (authorFreq.get(b.author) || 0) + 2);
+    }
+    const score = (b) => {
+      if (favSet.has(String(b.id))) return -1; // exclude
+      let s = 0;
+      (b.tags || []).forEach((t) => { s += (tagFreq.get(t) || 0); });
+      if (b.author) s += (authorFreq.get(b.author) || 0);
+      return s;
+    };
+    const ranked = [...mockBooks].map((b) => ({ b, s: score(b) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).map(x => x.b);
+    return tryRealOrMock(real, ranked);
   }
-  const score = (b) => {
-    if (favSet.has(String(b.id))) return -1; // exclude
-    let s = 0;
-    (b.tags || []).forEach((t) => { s += (tagFreq.get(t) || 0); });
-    if (b.author) s += (authorFreq.get(b.author) || 0);
-    return s;
-  };
-  const ranked = [...mockBooks].map((b) => ({ b, s: score(b) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).map(x => x.b);
-  return tryRealOrMock(real, ranked);
+  return tryRealOrMock(real, []);
 }
 
 // PUBLIC_INTERFACE

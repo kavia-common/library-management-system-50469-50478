@@ -8,16 +8,18 @@ import RecommendationsSection from '../components/RecommendationsSection';
 import GamificationSummary from '../components/GamificationSummary';
 import { getUserStats, listBadgesCatalog } from '../services/gamification';
 import { useNavigate } from 'react-router-dom';
+import FiltersBar from '../components/FiltersBar';
 
 // PUBLIC_INTERFACE
 export default function Home() {
   /**
-   * Home page: search input + grid of books with modal quick view.
+   * Home page: search input + filters + grid of books with modal quick view.
    * Uses environment-driven API base with mock fallback.
    * Adds Recommendations below results: Trending (always) + Favorites-based (if any).
    */
   const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
+  const [filters, setFilters] = useState({ tags: [], genres: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
@@ -31,7 +33,7 @@ export default function Home() {
     let active = true;
     setLoading(true);
     setError('');
-    getBooks()
+    getBooks(filters)
       .then((data) => {
         if (!active) return;
         setBooks(Array.isArray(data) ? data : []);
@@ -42,7 +44,7 @@ export default function Home() {
       })
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [t]);
+  }, [t, filters]);
 
   useEffect(() => {
     let active = true;
@@ -105,6 +107,8 @@ export default function Home() {
           </div>
         ) : null}
       </div>
+
+      <FiltersBar value={filters} onChange={setFilters} />
 
       {loading ? (
         <div className="card" style={{ padding: 16 }}>

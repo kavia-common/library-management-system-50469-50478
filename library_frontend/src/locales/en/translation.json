@@ -296,5 +296,36 @@
   "All": "All",
   "Add progress": "Add progress",
   "monthNames": ["January","February","March","April","May","June","July","August","September","October","November","December"],
-  "weekdayShort": ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+  "weekdayShort": ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+
+  "Tags": "Tags",
+  "Genres": "Genres",
+  "Manage Tags": "Manage Tags",
+  "Manage Genres": "Manage Genres",
+  "Add": "Add",
+  "Edit": "Edit",
+  "Delete": "Delete",
+  "Save": "Save",
+  "Cancel": "Cancel",
+  "Name": "Name",
+  "Description": "Description",
+  "Color": "Color",
+  "Search tags/genres": "Search tags/genres",
+  "Search tags": "Search tags",
+  "Search genres": "Search genres",
+  "Assign to book": "Assign to book",
+  "Clear all": "Clear all",
+  "Selected": "Selected",
+  "Create new tag": "Create new tag",
+  "Create new genre": "Create new genre",
+  "Loading": "Loading",
+  "Saving": "Saving",
+  "Close": "Close",
+  "validation": {
+    "required": "This field is required.",
+    "unique": "This name must be unique."
+  },
+  "confirm": {
+    "delete": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+  }
 }

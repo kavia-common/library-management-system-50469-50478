@@ -20,6 +20,7 @@ import ActivityLog from './pages/staff/ActivityLog';
 import StaffLogin from './pages/staff/StaffLogin';
 import Forbidden from './pages/staff/Forbidden';
 import { AuthProvider } from './context/AuthContext';
+import StaffTaxonomy from './pages/staff/StaffTaxonomy';
 
 // PUBLIC_INTERFACE
 function AppShell() {
@@ -62,6 +63,7 @@ function AppShell() {
             <Route path="/staff/users" element={<StaffUsersManagement />} />
             <Route path="/staff/roles" element={<RolesPermissions />} />
             <Route path="/staff/activity" element={<ActivityLog />} />
+            <Route path="/staff/taxonomy" element={<StaffTaxonomy />} />
           </Route>
         </Routes>
       </main>

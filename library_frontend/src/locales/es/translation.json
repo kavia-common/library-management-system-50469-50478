@@ -296,5 +296,36 @@
   "All": "Todos",
   "Add progress": "Añadir progreso",
   "monthNames": ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
-  "weekdayShort": ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"]
+  "weekdayShort": ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"],
+
+  "Tags": "Etiquetas",
+  "Genres": "Géneros",
+  "Manage Tags": "Gestionar etiquetas",
+  "Manage Genres": "Gestionar géneros",
+  "Add": "Agregar",
+  "Edit": "Editar",
+  "Delete": "Eliminar",
+  "Save": "Guardar",
+  "Cancel": "Cancelar",
+  "Name": "Nombre",
+  "Description": "Descripción",
+  "Color": "Color",
+  "Search tags/genres": "Buscar etiquetas/géneros",
+  "Search tags": "Buscar etiquetas",
+  "Search genres": "Buscar géneros",
+  "Assign to book": "Asignar al libro",
+  "Clear all": "Borrar todo",
+  "Selected": "Seleccionado",
+  "Create new tag": "Crear nueva etiqueta",
+  "Create new genre": "Crear nuevo género",
+  "Loading": "Cargando",
+  "Saving": "Guardando",
+  "Close": "Cerrar",
+  "validation": {
+    "required": "Este campo es obligatorio.",
+    "unique": "Este nombre debe ser único."
+  },
+  "confirm": {
+    "delete": "¿Está seguro que desea eliminar \"{{name}}\"? Esta acción no se puede deshacer."
+  }
 }

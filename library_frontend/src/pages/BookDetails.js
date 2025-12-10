@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getBookById, getUsersAlsoBorrowed, readFavorites, toggleFavorite } from '../services/api';
 import BookDetailModal from '../components/BookDetailModal';
@@ -7,12 +7,15 @@ import RecommendationRow from '../components/RecommendationRow';
 import { recordReadingActivity } from '../services/gamification';
 import { useToast } from '../components/ToastContext';
 import { getEvents } from '../services/events';
+import TaggingPanel from '../components/TaggingPanel';
+import { AuthContext } from '../context/AuthContext';
 
 // PUBLIC_INTERFACE
 export default function BookDetails() {
   /**
    * Book details route page; loads by id and renders in-page details.
    * Shows "Users also borrowed" and contextual banner if book club meeting references this book.
+   * Integrates TaggingPanel with permission-aware editing.
    */
   const { id } = useParams();
   const [book, setBook] = useState(null);
@@ -25,6 +28,8 @@ export default function BookDetails() {
   const [also, setAlso] = useState({ loading: true, items: [] });
   const [favorites, setFavorites] = useState(readFavorites());
   const [relatedEvent, setRelatedEvent] = useState(null);
+  const { user } = useContext(AuthContext) || {};
+  const canEdit = !!(user?.permissions?.includes?.('manage_inventory')) || !process.env.REACT_APP_API_BASE;
 
   useEffect(() => {
     let active = true;
@@ -134,6 +139,10 @@ export default function BookDetails() {
             ) : null}
           </div>
         </div>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <TaggingPanel bookId={book.id} canEdit={canEdit} />
       </div>
 
       <div style={{ marginTop: 16 }}>
